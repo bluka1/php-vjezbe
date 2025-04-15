@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Vježba</title>
+</head>
+
+<body>
+    <table border="1">
+        <form action="#" method="POST">
+            <tr>
+                <td>Ime:</td>
+                <td><input type="text" name="firstName"></td>
+            </tr>
+            <tr>
+                <td>Prezime:</td>
+                <td><input type="text" name="lastName"></td>
+            </tr>
+            <tr>
+                <td>Email:</td>
+                <td><input type="text" name="email"></td>
+            </tr>
+            <tr>
+                <td>Država:</td>
+                <td>
+                    <select name="country">
+                        <option value="HR">Hrvatska</option>
+                        <option value="SI">Slovenija</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>Spol:</td>
+                <td>
+                    <input type="radio" name="gender" value="male"> Muški
+                    <input type="radio" name="gender" value="female"> Ženski
+                </td>
+            </tr>
+            <tr>
+                <td>Zanima me:</td>
+                <td>
+                    <input type="radio" name="hoby" value="swimming"> Plivanje
+                    <input type="radio" name="hoby" value="climbing"> Penjanje
+                    <input type="radio" name="hoby" value="programming"> Programiranje
+                </td>
+            </tr>
+            <tr>
+                <td colspan="2">
+                    <button type="submit">Pošalji!</button>
+                </td>
+            </tr>
+        </form>
+    </table>
+</body>
+
+</html>
