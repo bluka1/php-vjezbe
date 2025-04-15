@@ -1,0 +1,14 @@
+1.
+Definirajte varijablu primeNumbers i dodijelite joj niz koji sadrži prvih pet primarnih brojeva.
+Provjerite postoji li u nizu treći element, te pomoću funkcije var_dump() ispišite rezultat provjere. Ako je rezultat provjere true, ispišite vrijednost trećeg elementa, a ako je false ispišite da treći element u nizu ne postoji.
+Na kraj niza dodajte novu vrijednost, tj. šesti primarni broj.
+Izbrojite i ispišite broj elemenata u nizu.
+Ispišite cijeli niz.
+Sortirajte niz silazno po vrijednostima, te ponovo ispišite cijeli niz. 
+
+2.
+Definirajte varijablu users i dodijelite joj niz koji sadrži podatke za dva korisnika. Svaki korisnik mora imati sljedeće podatke: ime, prezime, godine, spol. (Napomena: višedimenzionalni niz).
+Ispišite cijeli niz.
+U nizu svakom korisniku izbrišite ključ spol i njegovu vrijednost te ponovo ispišite niz.
+Dodajte novog korisnika na kraj niza bez ključa spol.
+Ispišite cijeli niz.

@@ -1,0 +1,13 @@
+Definirajte varijable a, b, c i d. Varijablama a i b dodijelite vrijednost integer, a varijablama c i d vrijednost string.
+
+Nad varijablama a i b primijenite sve aritmetičke operatore i ispišite rezultate.
+
+Nad varijablama c i d primijenite operator konkatenacije i dobivenu vrijednost dodijelite varijabli f, te ispišite vrijednost varijable f.
+
+Nad varijablama a i b primijenite jedan od kombiniranih operatora dodjele i ispišite rezultat.
+
+Nad varijablom a i b primijenite operator usporedbe (veće od) i pomoću var_dump() funkcije ispišite rezultat. 
+
+Nad varijablom a primijenite operator inkrementa i istovremeno ispišite rezultat.
+
+Nad varijablom b primijenite operator dekrementa i istovremeno ispišite rezultat.
