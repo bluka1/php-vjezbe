@@ -1,0 +1,6 @@
+Prvi
+1. Proizvoljno deklarirajte funkciju koja vraća neki tekst.
+2. Pozovite funkciju i vraćenu vrijednost dodijelite varijabli.
+3. Ispišite vrijednost varijable.
+
+Drugi
