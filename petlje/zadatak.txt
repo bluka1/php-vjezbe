@@ -1,0 +1,7 @@
+Prvi
+1. Koristeći petlju while, ispišite prvih deset brojeva.
+2. Koristeći petlju for, ispišite sve parne brojeve do 100.
+
+Drugi
+1. Definirajte varijablu names i dodijelite joj niz koji sadrži pet imena.
+2. Koristeći petlju foreach, iz niza ispišite ključeve i pripadajuće im vrijednosti. 

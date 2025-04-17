@@ -1,0 +1,9 @@
+Prvi
+1. Definirajte varijable a, b i c, te im istim redoslijedom dodijelite vrijednosti 5,10 i 15.
+2. Koristeći uvjetovani tip kontrolne strukture provjerite je li vrijednost b između a i c.
+3. Ako je uvjet istinit, ispišite da je b između a i c, a ako je uvjet lažan ispišite da nije.
+4. Kod mora raditi i ako zamijenimo vrijednosti u varijablama a i c. 
+
+Drugi
+1. Koristeći uvjetovani tip kontrolne strukture switch ispišite koji je trenutno dan u tjednu.
+2. Za ispravno izvršenu vježbu koristite PHP funkciju date(). Nazivi dana moraju biti na hrvatskom jeziku.
