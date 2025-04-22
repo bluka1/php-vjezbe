@@ -4,3 +4,13 @@ Prvi
 3. Ispišite vrijednost varijable.
 
 Drugi
+1. Proizvoljno deklarirajte funkciju koja ima dva argumenta (name i surname). Funkcija treba konkatenirati podatke iz argumenata tako da između postoji razmak i dodijeliti ih lokalnoj varijabli, zatim treba vrijednost u varijabli pretvoriti u velika slova i to vratiti kao rezultat.
+2. Pozovite funkciju i vraćenu vrijednost dodijelite varijabli.
+3. Ispišite vrijednost varijable.
+
+Treci
+1. Proizvoljno deklarirajte funkciju koja ima jedan argument (number). Funkcija treba imati lokalnu varijablu u koju će pribrojiti vrijednost argumenta number te istu vratiti kao rezultat. 
+2. Vrijednost treba biti zadržana kod svakog poziva funkcije.
+3. Deklarirajte funkciju kao varijablu.
+4. Pozovite funkciju pomoću varijable, a kao vrijednost argumenta pošaljite slučajan broj u rasponu od 1 do 10 te ispišite rezultat.
+5. Ponovite postupak pet puta.

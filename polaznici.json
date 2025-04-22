@@ -1,0 +1,44 @@
+[
+    {
+        "name": "Ivan",
+        "surname": "Horvat",
+        "age": 35,
+        "email": "ivan.horvat@gmail.com",
+        "phone": 38591222333
+    },
+    {
+        "name": "Ana",
+        "surname": "Mi\u0161ak",
+        "age": 25,
+        "email": "ana.misak@gmail.com",
+        "phone": 38592333444
+    },
+    {
+        "name": "Kristina",
+        "surname": "Kristi\u0107",
+        "age": 31,
+        "email": "kristina.kristic@gmail.com",
+        "phone": 38598444555
+    },
+    {
+        "name": "Mirko",
+        "surname": "Mirkan",
+        "age": 45,
+        "email": "ivan.horvat@gmail.com",
+        "phone": 38599555666
+    },
+    {
+        "name": "Marko",
+        "surname": "Antic",
+        "age": 45,
+        "email": "marko.antic@gmail.com",
+        "phone": "38599555666"
+    },
+    {
+        "name": "Marko",
+        "surname": "Antic",
+        "age": 45,
+        "email": "marko.antic@gmail.com",
+        "phone": "38599555666"
+    }
+]
