@@ -1,0 +1,17 @@
+prvi
+1. Kreirajte datoteku obrazac.php i kreirajte obrazac (vidi sliku). Obrazac treba poslati podatke na obradu datoteci obrada.php.
+2. Kreirajte datoteku obrada.php i unutar nje dohvatite podatke iz obrasca i obradite ih na sljedeći način:
+3. Provjerite postoje li podaci i, ako ih nema, ispišite poruku da nema podataka za obradu.
+4. Provjerite pojedinačne podatke i, ako postoje, ispišite ih, a ako ne postoje ispišite poruku da nema podatka.
+
+drugi
+1. Pomoću varijable GET dohvatite i ispišite podatke poslane kroz URL.
+2. Ako podaci ne postoje, ispišite poruku.
+
+zadatak - files
+1. Kreirajte datoteku obrazac-files.php i u njoj kreirajte HTML obrazac za upload datoteke. Obrazac treba poslati podatke na obradu datoteci obrada-files.php.
+2. Kreirajte datoteku obrada-files.php i u njoj dohvatite datoteku te učinite sljedeće:
+3. Provjerite je li datoteka poslana
+4. Kreirajte novu mapu u koju ćete pohraniti datoteku
+5. Provjerite je li poslana datoteka slika
+6. Pohranite poslanu datoteku.
