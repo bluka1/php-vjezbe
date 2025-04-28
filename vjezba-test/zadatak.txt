@@ -1,0 +1,7 @@
+1. Treba kreirati aplikaciju (vidi sliku) koja će iz datoteke words.json u desnu tablicu ispisati sve riječi koje su analizirane. 
+2. S lijeve strane treba kreirati obrazac kroz koji će se unositi nova riječ.
+3. Unesenu riječ treba obraditi na sljedeći način:
+  1. polje ne smije biti prazno
+  2. izbrojiti broj slova u riječi
+  3. izbrojiti suglasnike i samoglasnike u riječi (za ovu funkcionalnost kreirajte funkcije).
+4. Obrađenu riječ treba zapisati u words.json datoteku.
