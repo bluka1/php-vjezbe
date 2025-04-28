@@ -1,0 +1,3 @@
+1. Kreirajte kolačić i u njega zapišite neki podatak (npr. adresu e-pošte).
+2. Ispišite podatak iz kolačića.
+3. Obrišite kolačić.

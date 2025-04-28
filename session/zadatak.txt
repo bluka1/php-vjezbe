@@ -1,0 +1,4 @@
+1. Pokrenite sesiju i u nju zapišite neki podatak (npr. adresu e-pošte).
+2. Ispišite podatak iz sesije.
+3. Zatvorite sesiju.
+4. Ponovo ispišite podatke iz sesije.
