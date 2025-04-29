@@ -1,7 +1,7 @@
 <?php
-  include 'helpers.php';
+  include 'helpers2.php';
   
-  define('FILE_PATH', './words.json');
+  define('FILE_PATH', './words2.json');
 
   $rijeci = citajJsonDatoteku(FILE_PATH);
 
@@ -44,10 +44,9 @@
       <?php
         foreach($rijeci as $rijecUNizu) {
           echo '<tr>';
-          echo '<td>' . $rijecUNizu . '</td>';
-          echo '<td>' . izracunajBrojSlova($rijecUNizu) . '</td>';
-          echo '<td>' . izracunajBrojSamoglasnika($rijecUNizu) . '</td>';
-          echo '<td>' . izracunajBrojSuglasnika($rijecUNizu) . '</td>';
+          foreach($rijecUNizu as $vrijednost) {
+            echo '<td>' . $vrijednost . '</td>';
+          }
           echo '</tr>';
         }
       ?>
