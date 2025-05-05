@@ -36,16 +36,28 @@
     </tr>
 
     <?php
+      // $file_json = file_get_contents(FILE_PATH);
+      // $people = json_decode($file_json, true);
+      // foreach($people as $name) {
+      //   echo '<tr>';
+      //   echo '<td>' . $name . '</td>';
+      //   echo '<td>' . brojSlova($name) . '</td>';
+      //   echo '<td>' . sadrziA($name) . '</td>';
+      //   echo '<td>' . velikaSlova($name) . '</td>';
+      //   echo '<td>' . malaSlova($name) . '</td>';
+      //   echo '</tr>';
+      // } 
+
       $file_json = file_get_contents(FILE_PATH);
       $people = json_decode($file_json, true);
-      foreach($people as $name) {
+      foreach($people as $person) {
+        
         echo '<tr>';
-        echo '<td>' . $name . '</td>';
-        echo '<td>' . brojSlova($name) . '</td>';
-        echo '<td>' . sadrziA($name) . '</td>';
-        echo '<td>' . velikaSlova($name) . '</td>';
-        echo '<td>' . malaSlova($name) . '</td>';
+        foreach($person as $vrijednost) {
+          echo '<td>' . $vrijednost . '</td>';
+        }
         echo '</tr>';
+
       } 
     ?>
   </table>
