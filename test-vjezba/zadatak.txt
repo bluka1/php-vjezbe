@@ -1,0 +1,10 @@
+- Kreirajte aplikaciju koja će iz datoteke people.json učitati popis imena i prikazati ih u tablici.
+- Korisnik može dodati novo ime putem obrasca s lijeve strane.
+- S desne strane nalazi se tablica koja ispisuje sva postojeća imena te se ažurira na svako novo ime. (ažuriranje se vrši preusmjeravanjem korisnika)
+- Uneseno ime treba biti obrađeno na sljedeći način:
+- Polje ne smije biti prazno.
+- Izračunati broj slova u imenu.
+- Provjeriti sadrži li ime slovo "A" (bez obzira na veličinu slova).
+- Prikazati ime velikim slovima
+- Prikazati ime malim slovima
+- Obrađeno ime spremiti u people.json.
