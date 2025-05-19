@@ -145,3 +145,78 @@ ADD KEY fk_cjenikId (cjenikId),
 ADD CONSTRAINT fk_filmId FOREIGN KEY (filmId) REFERENCES filmovi (imdbId) ON UPDATE CASCADE,
 ADD CONSTRAINT fk_clanskiBroj FOREIGN KEY (clanskiBroj) REFERENCES clanovi (clanskiBroj) ON UPDATE CASCADE,
 ADD CONSTRAINT fk_cjenikId FOREIGN KEY (cjenikId) REFERENCES cjenik_posudbe (cjenikId) ON UPDATE CASCADE;
+
+INSERT INTO clanovi (clanskiBroj, ime, prezime, datumUclanjenja)
+VALUES (6, 'Mario', 'Maric', '2024-01-01');
+
+INSERT INTO clanovi (clanskiBroj, ime, prezime, datumUclanjenja)
+VALUES (7, 'Ivo', 'Ivic', '2024-02-02');
+
+INSERT INTO clanovi (clanskiBroj, ime, prezime, datumUclanjenja)
+VALUES (8, 'Pero', 'Perić', '2024-03-03');
+
+INSERT INTO clanovi (clanskiBroj, ime, prezime, datumUclanjenja)
+VALUES (9, 'Josip', 'Josić', '2024-04-04');
+
+INSERT INTO clanovi (clanskiBroj, ime, prezime, datumUclanjenja)
+VALUES (10, 'Stipe', 'Stipić', '2024-05-05');
+
+INSERT INTO cjenik_posudbe (cjenikId, kategorija, cijena)
+VALUES (1, 'Akcija', '5.99');
+
+INSERT INTO cjenik_posudbe (cjenikId, kategorija, cijena)
+VALUES (2, 'Komedija', '7.99');
+INSERT INTO cjenik_posudbe (cjenikId, kategorija, cijena)
+VALUES (3, 'Horor', '3.99');
+INSERT INTO cjenik_posudbe (cjenikId, kategorija, cijena)
+VALUES (4, 'Drama', '9.99');
+
+INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
+VALUES (1, 'Policijska akademija', 2000, 10, 7, 1);
+
+INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
+VALUES (2, 'Forrest gump', 2010, 7, 5, 1);
+
+INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
+VALUES (3, 'Mamurluk', 2015, 5, 3, 1);
+
+INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
+VALUES (4, 'Resident evil', 1999, 3, 3, 2);
+
+INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
+VALUES (5, 'Saw', 2020, 2, 2, 2);
+
+INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
+VALUES (6, 'Slagalica strave', 2005, 3, 3, 2);
+
+INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
+VALUES (3, 'Mamurluk', 2015, 5, 3, 1);
+
+INSERT INTO posudbe (posudbaId, filmId, clanskiBroj, datumPosudbe, datumPovrata, cjenikId)
+VALUES (1, 1, 1, '2024-05-05', '2024-06-05', 2);
+
+INSERT INTO posudbe (posudbaId, filmId, clanskiBroj, datumPosudbe, datumPovrata, cjenikId)
+VALUES (2, 2, 2, '2024-06-07', '2024-07-07', 2);
+
+INSERT INTO posudbe (posudbaId, filmId, clanskiBroj, datumPosudbe, datumPovrata, cjenikId)
+VALUES (3, 4, 3, '2024-08-08', '2024-09-08', 3);
+
+INSERT INTO posudbe (posudbaId, filmId, clanskiBroj, datumPosudbe, datumPovrata, cjenikId)
+VALUES (4, 5, 4, '2024-09-09', '2024-10-09', 3);
+
+-- Iz tablice 'cjenik_posudbe' izračunajte prosječnu cijenu svih kategorija filmova.
+SELECT ROUND(AVG(cijena), 2) 'Prosjek cijena'
+FROM cjenik_posudbe;
+
+-- Iz tablice 'posudbe' izračunajte ukupan broj posudbi.
+SELECT COUNT(*) 'Ukupan broj posudbi'
+FROM posudbe;
+
+-- Iz tablice 'clanovi' dohvatite 'ime' i 'prezime' te ih spojite u jedan atribut 'ime i prezime'.
+SELECT CONCAT(ime, ' ', prezime) 'ime i prezime'
+FROM clanovi;
+
+-- Iz tablice 'posudbe' izračunajte razliku u danima između atributa 'datumPosudbe' i 'datumPovrata' te rezultat sortirajte silazno.
+SELECT posudbaId, DATEDIFF(datumPovrata, datumPosudbe) razlika
+FROM posudbe
+ORDER BY razlika DESC;
