@@ -123,7 +123,7 @@ ADD CONSTRAINT PK_clanovi PRIMARY KEY (clanskiBroj);
 ALTER TABLE zanrovi
 ADD CONSTRAINT PK_zanrovi PRIMARY KEY (zanrId);
 
-ALTER TABLE filovi
+ALTER TABLE filmovi
 ADD CONSTRAINT PK_filmovi PRIMARY KEY (imdbId);
 
 ALTER TABLE posudbe
@@ -133,3 +133,15 @@ ALTER TABLE cjenik_posudbe
 ADD CONSTRAINT PK_cjenik_posudbe PRIMARY KEY (cjenikId);
 
 -- U tablicama 'filmovi' i 'posudba' dodajte strane ključeve i ograničenje na update postaviti CASCADE.
+
+ALTER TABLE filmovi
+ADD KEY fk_zanrId (zanrId),
+ADD CONSTRAINT fk_zanrId FOREIGN KEY (zanrId) REFERENCES zanrovi (zanrId) ON UPDATE CASCADE;
+
+ALTER TABLE posudbe
+ADD KEY fk_filmId (filmId),
+ADD KEY fk_clanskiBroj (clanskiBroj),
+ADD KEY fk_cjenikId (cjenikId),
+ADD CONSTRAINT fk_filmId FOREIGN KEY (filmId) REFERENCES filmovi (imdbId) ON UPDATE CASCADE,
+ADD CONSTRAINT fk_clanskiBroj FOREIGN KEY (clanskiBroj) REFERENCES clanovi (clanskiBroj) ON UPDATE CASCADE,
+ADD CONSTRAINT fk_cjenikId FOREIGN KEY (cjenikId) REFERENCES cjenik_posudbe (cjenikId) ON UPDATE CASCADE;
