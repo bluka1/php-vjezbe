@@ -220,3 +220,36 @@ FROM clanovi;
 SELECT posudbaId, DATEDIFF(datumPovrata, datumPosudbe) razlika
 FROM posudbe
 ORDER BY razlika DESC;
+
+-- Iz tablica 'posudbe' i 'cjenik_posudbe' dohvatite sljedeće podatke:
+-- posudbaId
+-- kategorija
+-- Ukupni broj posudbi po kategoriji
+-- Te iste podatke grupirajte po 'kategoriji'
+
+SELECT c.kategorija, COUNT(p.posudbaId) 'Ukupno posudbi = '
+FROM posudbe p
+INNER JOIN cjenik_posudbe c ON p.cjenikId = c.cjenikId
+GROUP BY c.kategorija; 
+
+
+-- Iz tablica 'clanovi' i 'posudbe' dohvatite sljedeće podatke:
+-- clanskiBroj
+-- ime
+-- posudbaId
+-- cjenikId
+-- Morate dohvatiti sve kupce neovisno da li su nešto naručili.
+
+SELECT c.clanskiBroj, c.ime, p.posudbaId, cj.cijena
+FROM clanovi c
+LEFT JOIN posudbe p ON c.clanskiBroj = p.clanskiBroj
+LEFT JOIN cjenik_posudbe cj ON p.cjenikId = cj.cjenikId;
+
+-- Iz tablica 'clanovi' i 'posudbe' dohvatite sljedeće podatke:
+-- posudbaId
+-- clanskiBroj
+-- Potrebno je dohvatiti sve clanove koji nemaju posudbi.
+
+SELECT p.posudbaId, c.clanskiBroj
+FROM clanovi c
+RIGHT JOIN posudbe p ON c.clanskiBroj = p.clanskiBroj;
