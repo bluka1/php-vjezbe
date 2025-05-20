@@ -324,3 +324,53 @@ CALL brojFilmovaToString();
 CALL brojFilmovaCase();
 
 CALL brojFilmovaLoop();
+
+-- Kreirajte transakciju koja će napraviti novu posudbu i pritom primiti filmId i clanskiBroj kao parametar
+CALL napraviPosudbu();
+
+CALL napraviPosudbu2();
+
+D-- ELIMITER $$
+
+-- CREATE PROCEDURE napraviPosudbuUzParametre(IN zeljeniFilmId INT, IN zeljeniClanskiBroj INT, IN noviFilmIme VARCHAR(255))
+
+-- BEGIN
+
+-- 	START TRANSACTION;
+--     
+--     SELECT (MAX(posudbaId) + 1) INTO @posudbaId FROM posudbe;
+
+-- 	-- ovaj if statement nema smisla, ali stavljen je da provjezbamo sintaksu
+-- 	IF @posudbaId <= 4 THEN
+-- 		ROLLBACK;
+-- 		SIGNAL SQLSTATE '45000'
+-- 		SET MESSAGE_TEXT = 'Nije moguce napraviti posudbu.';
+-- 	ELSE 
+-- 		INSERT INTO posudbe (posudbaId, filmId, clanskiBroj, datumPosudbe, datumPovrata, cjenikId)
+-- 		VALUES (@posudbaId, zeljeniFilmId, zeljeniClanskiBroj, CURDATE(), CURDATE() + INTERVAL 30 DAY, 3);
+-- 	END IF;
+
+-- 	SELECT (MAX(imdbId) + 1) INTO @filmId FROM filmovi;
+--     
+--     SELECT @filmId;
+
+-- 	IF @filmId <= 11 THEN
+-- 		ROLLBACK;
+-- 		SIGNAL SQLSTATE '45000'
+-- 		SET MESSAGE_TEXT = 'Film nije moguce ubaciti u bazu.';
+-- 	ELSE 
+-- 		INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
+-- 		VALUES (@filmId, noviFilmIme, 2012, 10, 10, 4);
+-- 	END IF;
+
+-- 	COMMIT;
+
+-- END$$
+
+-- DELIMITER ;
+
+CALL napraviPosudbuUzParametre(12, 10, 'Dvojica pape');
+
+SELECT * FROM posudbe;
+
+SELECT * FROM filmovi;
