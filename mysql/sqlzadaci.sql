@@ -190,7 +190,20 @@ INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
 VALUES (6, 'Slagalica strave', 2005, 3, 3, 2);
 
 INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
-VALUES (3, 'Mamurluk', 2015, 5, 3, 1);
+VALUES (7, 'Rambo', 2015, 5, 3, 4);
+
+INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
+VALUES (8, 'Gas do daske', 2015, 5, 3, 4);
+
+INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
+VALUES (9, 'Terminator', 2015, 5, 3, 4);
+
+INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
+VALUES (10, 'Titanic', 2015, 5, 3, 3);
+
+INSERT INTO filmovi (imdbId, naziv, godina, kolicinaDvd, kolicinaBluRay, zanrId)
+VALUES (11, 'Romeo i Julija', 2015, 5, 3, 3);
+
 
 INSERT INTO posudbe (posudbaId, filmId, clanskiBroj, datumPosudbe, datumPovrata, cjenikId)
 VALUES (1, 1, 1, '2024-05-05', '2024-06-05', 2);
@@ -245,11 +258,69 @@ FROM clanovi c
 LEFT JOIN posudbe p ON c.clanskiBroj = p.clanskiBroj
 LEFT JOIN cjenik_posudbe cj ON p.cjenikId = cj.cjenikId;
 
--- Iz tablica 'clanovi' i 'posudbe' dohvatite sljedeće podatke:
--- posudbaId
--- clanskiBroj
--- Potrebno je dohvatiti sve clanove koji nemaju posudbi.
+-- Iz tablica 'filmovi' i 'zanrovi' dohvatite sljedeće podatke:
+-- naziv filma
+-- naziv zanra
+-- Potrebno je dohvatiti sve zanrove koji nemaju filmove.
 
-SELECT p.posudbaId, c.clanskiBroj
-FROM clanovi c
-RIGHT JOIN posudbe p ON c.clanskiBroj = p.clanskiBroj;
+SELECT f.naziv 'naziv filma', z.naziv 'naziv zanra'
+FROM filmovi f
+RIGHT JOIN zanrovi z ON f.zanrId = z.zanrId
+WHERE f.naziv IS NULL;
+
+SELECT f.naziv 'naziv filma', z.naziv 'naziv zanra'
+FROM filmovi f
+CROSS JOIN zanrovi z;
+--CROSS JOIN zanrovi z ON f.zanrId = z.zanrId;
+
+
+-- Kreirajte proceduru koja će dohvatiti sve podatke iz tablice 'filmovi'.
+CALL dohvatiFilmove();
+
+-- Kreirajte proceduru s jednim ulaznim paremetrom koji će primiti id filma te prikazati taj isti film.
+CALL dohvatiFilmPremaIdu(3);
+
+-- Kreirajte proceduru koja će vratiti ukupan broj filmova (koristite varijable).
+
+
+-- DELIMITER $$
+-- CREATE PROCEDURE brojFilmovaLoop()
+-- BEGIN
+
+-- 	DECLARE ukupanBrojFilmova INT DEFAULT 0;
+--    --  DECLARE rezultat VARCHAR(255) DEFAULT '';
+-- 	DECLARE zbrojFilmova INT DEFAULT 0;
+--     
+--     SET ukupanBrojFilmova = (SELECT COUNT(*) FROM filmovi);
+--     
+--  --    IF ukupanBrojFilmova > 10 THEN
+-- -- 		SET rezultat = 'Puno';
+-- -- 	ELSE
+-- -- 		SET rezultat = 'Malo';
+-- -- 	END IF;
+
+-- -- 	CASE ukupanBrojFilmova
+-- -- 		WHEN 11 THEN SET rezultat = '11 komada u videoteci';
+-- --         WHEN 12 THEN SET rezultat = '12 komada u videoteci';
+-- --         ELSE SET rezultat = 'nepoznat broj komada u videoteci';
+-- -- 	END CASE;
+
+-- 	prebroji_loop: LOOP
+-- 		IF zbrojFilmova >= ukupanBrojFilmova THEN
+-- 			LEAVE prebroji_loop;
+-- 		END IF;
+--         SET zbrojFilmova = zbrojFilmova + 1;
+-- 	END LOOP;
+--     
+--     SELECT zbrojFilmova AS zbrojFilmova;
+-- END$$
+-- DELIMITER ;
+
+
+CALL brojFilmova2();
+
+CALL brojFilmovaToString();
+
+CALL brojFilmovaCase();
+
+CALL brojFilmovaLoop();
