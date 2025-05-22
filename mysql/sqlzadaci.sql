@@ -374,3 +374,14 @@ CALL napraviPosudbuUzParametre(12, 10, 'Dvojica pape');
 SELECT * FROM posudbe;
 
 SELECT * FROM filmovi;
+
+-- Kreirajte pogled koji ce obuhvatiti sljedece podatke: ime filma, godina filma, datum posudbe, datum povrata, cijena, ime i prezime
+
+CREATE OR REPLACE VIEW podaciPosudbi AS
+SELECT f.naziv 'Ime filma', p.datumPosudbe 'Datum posudbe', p.datumPovrata 'Datum povrata', cj.cijena 'Cijena', CONCAT(cl.ime, ' ', cl.prezime) 'Ime i prezime clana'
+FROM posudbe p
+INNER JOIN filmovi f ON p.filmId = f.imdbId
+INNER JOIN cjenik_posudbe cj ON cj.cjenikId = p.cjenikId
+INNER JOIN clanovi cl ON cl.clanskiBroj = p.clanskiBroj;
+
+SELECT * FROM podaciPosudbi;
