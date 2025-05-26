@@ -139,3 +139,30 @@ INSERT INTO voditeljiOdjela(idOdjela, idZaposlenika) VALUES
 (3, 8);
 
 SELECT * FROM voditeljiOdjela;
+
+-- Dohvatite sve zaposlenike i njihove plaće.
+-- SELECT * FROM zaposlenici z
+-- INNER JOIN place p ON z.placaId = p.id;
+
+SELECT z.ime, z.prezime, p.iznos FROM zaposlenici z
+INNER JOIN place p ON z.placaId = p.id;
+
+-- Dohvatite sve voditelje odjela i izračunajte prosjek njihovih plaća.
+SELECT * FROM voditeljiOdjela v
+INNER JOIN zaposlenici z ON v.idZaposlenika = z.id
+INNER JOIN place p ON z.placaId = p.id;
+
+SELECT ROUND(AVG(p.iznos), 2) 'Prosjek' FROM voditeljiOdjela v
+INNER JOIN zaposlenici z ON v.idZaposlenika = z.id
+INNER JOIN place p ON z.placaId = p.id;
+
+-- Kreirajte proceduru koja će računati prosjek plaća svih zaposlenika.
+DELIMITER $$
+CREATE PROCEDURE prosjekPlaca()
+BEGIN
+	SELECT ROUND(AVG(p.iznos), 2) 'Prosjek placa svih zaposlenika', COUNT(*) 'Ukupan broj zaposlenika' FROM zaposlenici z
+	INNER JOIN place p ON z.placaId = p.id;
+END$$
+DELIMITER ;
+
+CALL prosjekPlaca();
