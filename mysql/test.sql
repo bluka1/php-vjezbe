@@ -166,3 +166,58 @@ END$$
 DELIMITER ;
 
 CALL prosjekPlaca();
+
+
+-- vjezbanje joinova i procedura
+
+-- cilj - prikazati ime, prezime, poziciju i placu svakog zaposlenika
+-- SELECT z.ime 'Ime', z.prezime 'Prezime', p.naziv 'Pozicija' FROM zaposlenici z
+-- INNER JOIN pozicije p ON z.pozicijaId = p.id;
+
+SELECT z.ime 'Ime', z.prezime 'Prezime', p.naziv 'Pozicija', pl.iznos 'Placa' FROM zaposlenici z
+INNER JOIN pozicije p ON z.pozicijaId = p.id
+INNER JOIN place pl ON z.placaId = pl.id;
+
+-- DELIMITER $$
+-- CREATE PROCEDURE prikaziSveZaposlenikePlacePozicije()
+-- BEGIN
+-- 	SELECT z.ime 'Ime', z.prezime 'Prezime', p.naziv 'Pozicija', pl.iznos 'Placa' FROM zaposlenici z
+-- 	INNER JOIN pozicije p ON z.pozicijaId = p.id
+-- 	INNER JOIN place pl ON z.placaId = pl.id;
+-- END$$
+-- DELIMITER ;
+
+CALL prikaziSveZaposlenikePlacePozicije();
+
+-- dodati podatke u tablice pozicije i place te kreirati LEFT i RIGHT JOINove
+INSERT INTO pozicije(naziv) VALUES
+('Arhitekt'),
+('QA engineer'),
+('Dizajner');
+
+INSERT INTO place(iznos) VALUES
+(2500),
+(3000),
+(3500);
+
+SELECT * FROM pozicije;
+
+-- left
+SELECT z.ime, z.prezime, p.naziv FROM zaposlenici z
+LEFT JOIN pozicije p ON z.pozicijaId = p.id;
+
+-- right
+SELECT z.ime, z.prezime, p.naziv FROM zaposlenici z
+RIGHT JOIN pozicije p ON z.pozicijaId = p.id;
+
+-- cross
+SELECT * FROM zaposlenici
+CROSS JOIN pozicije;
+
+-- START TRANSACTION;
+-- 	INSERT INTO pozicije(naziv)
+-- 	VALUES ('CEO');
+--     ROLLBACK;
+-- 	INSERT INTO place(iznos)
+-- 	VALUES ('4000');
+-- COMMIT;
