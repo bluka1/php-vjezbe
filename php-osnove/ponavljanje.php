@@ -135,7 +135,7 @@ is_string();
 is_int();
 is_array();
 is_bool();
-isset();
+// isset();
 empty();
 
 // eksplicitne konverzije podataka
@@ -309,5 +309,36 @@ echo $varSum();
 
 // arrow funkcije
 $zbrojiDvaBroja = fn($x, $y) => $x + $y;
+
+// scope
+$y = 10; // globalna promjenljiva
+
+$globalnaVarijabla = 1;
+
+function lokalniScope() use ($globalnaVarijabla) {
+  $y = 20; // lokalna varijabla
+  $x = 5;
+
+  global $globalnaVarijabla; // referenca na globalnu varijablu
+}
+
+echo $x; // greska
+
+
+// rad s datotekama
+// file_get_contents(); - dohvacanje sadrzaja datoteke
+// file_put_contents(); - zapisivanje sadrzaja datoteke
+
+// json_encode();
+// json_decode();
+
+
+// super globalne varijable
+// $_GET
+// $_POST
+// $_SERVER
+// $_FILES
+// $_SESSION
+// $_COOKIE
 
 ?>
