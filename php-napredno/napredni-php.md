@@ -127,3 +127,36 @@ Umjesto da čekamo na destruktor da pokrene `__destruct()` metodu, ako znamo da 
 ```
 unset($noviObjekt);
 ```
+
+### Apstraktne klase
+Apstraktna klasa je klasa iz koje ne možemo napraviti objekt tj. ne možemo ju direktno instancirati koristeći ključnu riječ `new`. Njena poanta je da ju druge klase naslijede i "pokupe" njena svojstva i metode. Ona je drugim riječima temelj za kreiranje druge klase.
+
+Apstraktna klasa može sadržavati:
+- konkretne metode s punom implementacijom (kao i metode na običnoj klasi)
+- apstraktne metode - deklarirana metoda, ali bez implementacije (implementacija je ostavljena klasama koje nasljeduju apstraktnu klasu)
+- svojstva - public/private/protected
+
+Apstraktnu klasu definiramo pomoću ključne riječi `abstract class` dok apstraktne metode definiramo pomoću ključne riječi `abstract function`.
+
+```
+abstract class Zivotnja {
+  public $vrsta;
+
+  public function __construct($_vrsta) {
+    $this->vrsta = $_vrsta;
+  }
+
+  public function trci() {
+    echo 'fijuuuuu...';
+  }
+
+  abstract function glasajSe();
+}
+```
+
+Svaka klasa koja nasljeduje apstraktnu klasu MORA koristiti `extends` ključnu riječ da bi ju naslijedila. Ta klasa koja nasljeduje apstraktnu klasu MORA implementirati sve apstraktne metode iz apstraktne(roditeljske) klase. Ako slučajno ne implementira sve metode, ona sama MORA biti definirana kao apstraktna.
+
+
+### Sučelja (interfaces)
+
+### Imenski prostori (namespaces)
