@@ -158,5 +158,47 @@ Svaka klasa koja nasljeduje apstraktnu klasu MORA koristiti `extends` ključnu r
 
 
 ### Sučelja (interfaces)
+Sučelja se mogu okarakterizirati kao ugovori izmedu sučelja i klase koja će implementirati to sučelje.
+Sučelja definiraju koje metode klasa mora implementirati ako implementira to sučelje, a definira se pomoću ključne riječi `interface`.
+
+U usporedbi s apstraktnim klasama, sučelja:
+- ne mogu sadrżavati implementaciju metoda - sadrže samo deklaraciju metoda
+- ne mogu sadržavati svojstva
+- klasa može implementirati jedno ili više sučelja (koristeći `implements` ključnu riječ)
+
+```
+interface MozeGovoriti {
+  public function govori($poruka);
+}
+
+interface MozeHodati {
+  public function hodaj();
+}
+
+class Osoba implements MozeGovoriti, MozeHodati {
+  public function govori($poruka){
+    echo $poruka;
+  }
+
+  public funtion hodaj() {
+    echo 'korak 1...'
+  }
+}
+```
+
+#### Razlike sučelja i apstraktnih klasa
+- implementacija
+  - apstraktne klase mogu imati i apstraktne i obične metode
+  - sučelja mogu imati samo apstraktne metode (bez implementacije)
+- svojstva
+  - apstraktne klase mogu imati svojstva
+  - sučelja ne mogu imati svojstva
+- višestruko nasljedivanje/implementacija
+  - klasa može naslijediti samo jednu klasu (apstraktnu ili bilo koju drugu)
+  - klasa može implementirati više sučelja
+
+Apstraktne klase dobre su za odnos `je` - npr. Pas je Životinja (želimo podijeliti zajednički kod i strukturu klase)
+
+Sučelja su dobra za `može` odnos - npr. Osoba može govoriti, Osoba može hodati (želimo definirati "ugovor" o ponašanju bez obzira na pojedinu implementaciju)
 
 ### Imenski prostori (namespaces)
