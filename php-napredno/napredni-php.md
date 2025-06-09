@@ -202,3 +202,73 @@ Apstraktne klase dobre su za odnos `je` - npr. Pas je Životinja (želimo podije
 Sučelja su dobra za `može` odnos - npr. Osoba može govoriti, Osoba može hodati (želimo definirati "ugovor" o ponašanju bez obzira na pojedinu implementaciju)
 
 ### Imenski prostori (namespaces)
+Imenski prostori su način organiziranja i grupiranja povezanog koda u logičke cjeline te način sprječavanja kolizije izmedu imena funkcija, klasa i konstanti.
+
+Oni se mogu poistovjetiti s mapama na vašem računalu.
+
+primjer:
+
+ unutar naše aplikacije imamo mapu Korisnici i unutar nje imamo datoteku podaci.txt; imamo mapu Partneri i unutar nje imamo datoteku podaci.txt. Ta 2 dokumenta neće biti u koliziji ako koristimo imenske prostore jer se nalaze u različitim mapama.
+
+
+`MojaAplikacija/Korisnici/Korisnik.php`
+```
+<?php
+  namespace MojaAplikacija\Korisnici
+
+  class Korisnik {
+    public $ime;
+    public $email;
+
+    public __construct($ime, $email) {
+      $this->ime = ime;
+      $this->email = email;
+    }
+  }
+>
+```
+
+
+Korištenje imenskih prostora i kreiranje aliasa:
+`MojaApikacija/index.php`
+```
+<?php
+  ...
+  // import klase koju namjeravamo koristiti
+  include 'MojaAplikacija/Korisnici/Korisnik.php'
+
+  // korištenje klase bez imenskog prostora
+  $korisnik = new MojaAplikacija\Korisnici\Korisnik('Franjo', 'franjo@email.com');
+  
+  // korištenje klase uz ključnu riječ use
+  use MojaAplikacija\Korisnici\Korisnik;
+  $korisnik = new Korisnik('Franjo', 'franjo@email.com');
+
+  // kreiranje aliasa za klasu iz imenskog prostora
+  use MojaAplikacija\Korisnici\Korisnik as K;
+  $korisnik = new K('Franjo', 'franjo@email.com');
+  ...
+>
+```
+
+- ključna riječ `use` omogućuje nam da uvezemo klasu iz odredenog prostora i koristimo ju kraćim imenom
+- alias je posebno koristan kad imamo koliziju imena iz različitih prostora ili kad je ime predugačko
+
+Prednosti korištenja imenskih prostora:
+1. Sprječavanje kolizije imena
+2. Bolja organizacija koda (logičko grupiranje povezanih klasa)
+3. Lakše održavanje (jasnija struktura u većim aplikacijama)
+4. Kompatibilnost s vanjskim bibliotekama (izbjegavanje "sukoba" s kodom iz vanjskih biblioteka)
+
+
+### Automatsko učitavanja
+Automatsko učitavanje je mehanizam koji omogućuje PHP-u da automatski pronade i učita datoteku koja sadrži klasu koju želimo instancirati. Umjesto da eksplicitno uključujemo datoteke u naš kod, PHP će korištenjem automatskog učitavanja automatski to učiniti za nas i to isključivo onda kad mi to zatražimo (tj. kad pozovemo konstruktor funkciju neke klase - kad ju želimo instancirati).
+
+PHP ima ugradenu funkciju `spl_autoload_register()` pomoću koje možemo registrirati vlastitu funkciju koja će se pozivati svaki put kad PHP pokuša koristiti klasu koju nije učitao.
+
+Prednosti automatskog učitavanja:
+1. čišći kod - nema require/include naredbi
+2. bolje performanse - klase se učitavaju samo onda kad su potrebne
+3. lakše održavanje - dodavanje nove klase ne zahtjeva mijenjanje postojećeg koda
+4. standardizirani pristup - kompatibilnost s composerom i modernim frameworcima
+
