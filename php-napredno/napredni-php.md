@@ -261,7 +261,7 @@ Prednosti korištenja imenskih prostora:
 4. Kompatibilnost s vanjskim bibliotekama (izbjegavanje "sukoba" s kodom iz vanjskih biblioteka)
 
 
-### Automatsko učitavanja
+### Automatsko učitavanje
 Automatsko učitavanje je mehanizam koji omogućuje PHP-u da automatski pronade i učita datoteku koja sadrži klasu koju želimo instancirati. Umjesto da eksplicitno uključujemo datoteke u naš kod, PHP će korištenjem automatskog učitavanja automatski to učiniti za nas i to isključivo onda kad mi to zatražimo (tj. kad pozovemo konstruktor funkciju neke klase - kad ju želimo instancirati).
 
 PHP ima ugradenu funkciju `spl_autoload_register()` pomoću koje možemo registrirati vlastitu funkciju koja će se pozivati svaki put kad PHP pokuša koristiti klasu koju nije učitao.
@@ -272,3 +272,79 @@ Prednosti automatskog učitavanja:
 3. lakše održavanje - dodavanje nove klase ne zahtjeva mijenjanje postojećeg koda
 4. standardizirani pristup - kompatibilnost s composerom i modernim frameworcima
 
+### Iznimke (Exception handling)
+Iznimke su objekti koji predstavljaju greške ili neke neočekivane situacije koje se mogu dogoditi prilikom izvršavanja programa. 
+Umjesto da nam greška naruši ponašanje aplikacije, naš zadatak je da "uhvatimo" problem koji se desi i elegantno ga riješimo (ili prikažemo korisniku neku razumljivu poruku o grešci).
+Za upravljanje iznimkama, koristi se `try-catch-finally` blok.
+
+Kako funkcionira try-catch-finally blok?
+1. try blok - kod koji može uzrokovati grešku
+2. catch blok - kod koji se izvršava kad se iznimka dogodi
+3. Exception objekt - sadrži informacije o grešci (npr. poruku, lokaciju, kod...)
+4. finally blok - izvršava se na kraju, neovisno o tome je li došlo do greške ili nije (nije ga obavezno pisati) - često za čišćenje resursa, zatvaranje konekcija i sl.
+
+Sintaksa `try-catch-finally` bloka:
+```
+try {
+  ...
+  // kod koji može uzrokovati iznimku
+  $rezultat = rizicnaOperacija();
+  echo $rezultat;
+} catch (Exception $e) {
+  ...
+  // kod koji se izvršava u slučaju greške iz gornjeg bloka
+  echo 'Greška: ' . $e->getMessage();
+} finally {
+  ...
+  // uvijek se izvršava
+}
+```
+
+Više iznimaka i različiti tipovi iznimaka:
+
+```
+try {
+  $pdo = new PDO("mysql:host=localhost;dbname=test", $user, $password);
+  $file = file_get_contents('nepostojeciFile.txt');
+  $rezultat = 10 / 0;
+} catch(PDOException $e) {
+  echo 'Greška baze podataka: ' . $e->getMessage();
+} catch(ErrorException $e) {
+  echo 'Greška datoteke: ' . $e->getMessage();
+} catch(DivisonByZeroError $e) {
+  echo 'Matematička greška: ' . $e->getMessage();
+} catch(Exception $e) {
+  echo 'Općenita greška: ' . $e->getMessage();
+}
+```
+
+Prednosti upravljanja greškama (Excption handling):
+1. elegantno rukovanja greškama - program ne prekida rad
+2. bolje korisničko iskustvo - prikladne i razumljive poruke o greškama
+3. lakše debuggiranje - detaljnije informacije o grešci
+4. čišći kod - odvajamo glavnu logiku od rukovanja greškama
+
+
+Sve iznimke baziraju se na Throwable sučelju koje implementiraju Error (fatalne greške) i Exception (iznimke koje možemo uhvatiti) klase.
+- `Throwable`
+  - `Error` (fatalne greške u PHP-u - potrebno ispraviti u kodu)
+    - `ParseError` (greške u sintaksi - npr. kad zaboravimo ; ili zatvoriti/otvoriti zagradu i sl.)
+    - `TypeError` (greška u proslijedenom tipu podatka - npr. funkcija očekuje int, a proslijedimo string)
+    - `ArgumentCountError` (proslijeden pogrešan broj parametara funkcije)
+    - `ArithmeticError` (greška pogrešne matematičke operacije koja nije dijeljenje s nulom)
+      - `DivisionByZeroError` (greška kod dijeljenja s nulom)
+  - `Exception` (iznimke koje možemo uhvatiti i trebamo predvidjeti)
+    - `ErrorException` (omogućuje da se PHP greške nižeg ranga pretvore u iznimke koje se mogu uhvatiti - npr. Warning ili Notice greške)
+    - `InvalidArgumentException` (argument proslijeden funkciji je ispravnog tipa, ali neispravne vrijednosti - npr. funkcija očekuje pozitivan broj, a mi proslijedimo negativan broj)
+    - `LogicException` (greška u samoj logici programa - npr. 2 puta pošaljemo narudžbu)
+    - `RuntimeException` (greška uzrokovana vanjskim faktorima kao npr. nedostupnost API-ja, nemamo ovlasti za pisanje u datoteku i sl.)
+      - `OutOfBoundsException` (greška kod pristupanja nepostojećem indeksu u nizu)
+      - `UnexpectedValueException` (greška uzrokovana pogrešnom vrijednosti npr. neispravno formatiran JSON)
+    - `PDOException` (greška u komunikaciji s bazom)
+
+Najbolje prakse za iznimke:
+1. specifičnost - hvatanje specifičnih iznimaka, a ne samo generalni Exception
+2. logiranje - uvijek bilježite (logirajte) greške
+3. čišćenje - korisitite finally blok za oslobadanje resursa
+4. informativne poruke - dajte korisne informacije o grešci
+5. ne skrivajte poruke - ne ostavljajte prazan catch blok
