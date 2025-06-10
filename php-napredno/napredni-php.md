@@ -348,3 +348,59 @@ Najbolje prakse za iznimke:
 3. čišćenje - korisitite finally blok za oslobadanje resursa
 4. informativne poruke - dajte korisne informacije o grešci
 5. ne skrivajte poruke - ne ostavljajte prazan catch blok
+
+
+### Obrasci dizajna (Design patterns)
+
+Obrasci dizajna dokazana su rješenja za česte probleme u programiranju. To su "recepti" za rješavanje tih problema no nisu gotov kod koji ćemo od nekuda iskopirati. Radi se o konceptu tj. načinu pisanja koda koji se može prilagoditi traženoj situaciji.
+
+#### Singleton obrazac
+Singleton obrazac osigurava da klasa ima samo jednu instancu i pruža globalan pristup toj instanci.
+Koristi se za:
+- konekciju na bazu podataka
+- logger objekte
+- konfiguraciju aplikacije
+- cache objekte...
+
+Nedostaci Singletona:
+- može otežati testiranje koda
+- uvodi skrivene ovisnosti
+- može narušiti [SOLID principe](https://www.digitalocean.com/community/conceptual-articles/s-o-l-i-d-the-first-five-principles-of-object-oriented-design)
+
+Singleton koristimo samo onda kada je to stvarno potrebno.
+
+```
+class Database {
+  private static $instance = null;
+  private $connection;
+
+  // privatni konstruktor sprječava direktno kreiranje objekta
+  private function __construct() {
+    $this->connection = new PDO('mysql:host=localhost;dbname=videoteka', 'user', 'pass');
+  }
+
+  // sprječava kloniranje objekta
+  private function __clone() {}
+
+  // sprječava deserijalizaciju
+  private function __wakeup() {}
+
+  // public metoda za kreiranje instance
+  public static function getInstance() {
+    // Database::$instance === null
+    if (self::$instance === null) {
+      self::$instance = new self(); // new Database();
+    }
+    return self::$instance;
+  }
+
+  public function getConnection() {
+    return $this->connection;
+  }
+}
+
+$baza = Database::getInstance();
+$baza2 = Database::getInstance(); // isti objekt kao ovaj iznad
+$baza->getConnection();
+var_dump($baza === $baza2); // true
+```
