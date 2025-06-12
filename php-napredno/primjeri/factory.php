@@ -48,8 +48,27 @@ class Parmezan implements Sir {
   }
 }
 
+// class SirFactory {
+//   public static function napraviSir($vrsta) {
+//     switch($vrsta) {
+//       case 'zrnati':
+//         return new Zrnati();
+//       case 'skripavac':
+//         return new Skripavac();
+//       case 'parmezan':
+//         return new Parmezan();
+//       default: 
+//         throw new InvalidArgumentException('Ne postoji vrsta sira: ' . $vrsta);
+//     }
+//   }
+// }
+
+// $zrnati = SirFactory::napraviSir('zrnati');
+// $skripavac = SirFactory::napraviSir('skripavac');
+// $parmezan = SirFactory::napraviSir('parmezan');
+
 class SirFactory {
-  public static function napraviSir($vrsta) {
+  public function napraviSir($vrsta) {
     switch($vrsta) {
       case 'zrnati':
         return new Zrnati();
@@ -63,9 +82,10 @@ class SirFactory {
   }
 }
 
-$zrnati = SirFactory::napraviSir('zrnati');
-$skripavac = SirFactory::napraviSir('skripavac');
-$parmezan = SirFactory::napraviSir('parmezan');
+$sirFactory = new SirFactory();
+$zrnati = $sirFactory->napraviSir('zrnati');
+$skripavac = $sirFactory->napraviSir('skripavac');
+$parmezan = $sirFactory->napraviSir('parmezan');
 
 $zrnati->susi();
 $skripavac->susi();
