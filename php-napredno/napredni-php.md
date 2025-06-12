@@ -354,6 +354,12 @@ Najbolje prakse za iznimke:
 
 Obrasci dizajna dokazana su rješenja za česte probleme u programiranju. To su "recepti" za rješavanje tih problema no nisu gotov kod koji ćemo od nekuda iskopirati. Radi se o konceptu tj. načinu pisanja koda koji se može prilagoditi traženoj situaciji.
 
+Prije nego krenemo s obrascima, moramo znati što znači `static` keyword odnosno djelokrug(visibility).
+
+Kada neko svojstvo ili neka metoda ima djelokrug postavljen na `static`, to znači da to svojstvo odnosno ta metoda nije dostupna na instanci objekta nastalog iz klase već su oni dostupni na samoj klasi.
+To znači da se na njih ne referiramo unutar instance objekta već da ih pozivamo odnosno referiramo se na njih pomoću imena klase te znaka `::`.
+Dakle, ta svojstva i metode žive unutar same klase, a ne unutar objekta.
+
 #### Singleton obrazac
 Singleton obrazac osigurava da klasa ima samo jednu instancu i pruža globalan pristup toj instanci.
 Koristi se za:
@@ -368,6 +374,14 @@ Nedostaci Singletona:
 - može narušiti [SOLID principe](https://www.digitalocean.com/community/conceptual-articles/s-o-l-i-d-the-first-five-principles-of-object-oriented-design)
 
 Singleton koristimo samo onda kada je to stvarno potrebno.
+
+Prilikom kreiranja instance objekta generalno, postoje 3 načina za izradu objekta:
+1. korištenjem konstruktora
+2. kloniranjem
+3. deserijalizacijom
+
+Da bismo osigurali da neka klasa može biti isključivo singleton objekt, moramo "zatvoriti" sve načine instanciranja objekta iz klase.
+Iz tog razloga konstruktor nam mora biti privatan isto kao i `__clone()` i `__wakeup()` metode koje služe kreiranju objekta. `__clone()` je metoda za kloniranje i izradu nove instance objekta dok `__wakeup()` metoda služi da bi se neki string (npr. koji smo dobili iz JSON filea) pretvorio u objekt.
 
 ```
 class Database {
@@ -403,4 +417,110 @@ $baza = Database::getInstance();
 $baza2 = Database::getInstance(); // isti objekt kao ovaj iznad
 $baza->getConnection();
 var_dump($baza === $baza2); // true
+```
+
+
+#### Factory obrazac
+Factory obrazac je sučelje za kreiranje objekata bez specificiranja točne klase objekta koji se kreira.
+
+Factory obrazac koristimo kada:
+- ne znamo unaprijed točan tip objekta koji trebamo kreirati
+- želimo imati centraliziranu logiku za stvaranje objekta
+- objekti imaju zajedničko sučelje, a različitu implementaciju
+
+Prednosti korištenja factory obrasca:
+1. fleksibilnost - lako dodavanje novih tipova objekata
+2. centralizirana logika - sva logika kreiranja nalazi se na samo jednom mjestu
+3. loose coupling - kod ne ovisi o konkretnim klasama
+
+```
+// sučelje koje dijele sve klase
+interface Vozilo {
+  public function stani();
+  public function kreni();
+}
+
+class Automobil implements Vozilo {
+  public function stani() {
+    echo 'Zaustavljam automobil';
+  }
+  public function kreni() {
+    echo 'Pokrećem automobil';
+  }
+}
+
+class Bicikl implements Vozilo {
+  public function stani() {
+    echo 'Zaustavljam bicikl';
+  }
+  public function kreni() {
+    echo 'Pokrećem bicikl';
+  }
+}
+
+class Motor implements Vozilo {
+  public function stani() {
+    echo 'Zaustavljam motor';
+  }
+  public function kreni() {
+    echo 'Zaustavljam motor';
+  }
+}
+
+// Factory klasa
+class VoziloFactory {
+  public static function create($tip) {
+    switch($tip) {
+      case 'automobil':
+        return new Automobil();
+      case 'bicikl':
+        return new Bicikl();
+      case 'motor':
+        return new Motor();
+      default:
+        throw new InvalidArgumentException('Nepoznat tip vozila: ' . $tip);
+    }
+  }
+}
+
+$vozilo1 = VoziloFactory::create('automobil');
+$vozilo2 = VoziloFactory::create('bicikl');
+```
+
+Primjer kombinacije singleton i factory obrasca
+ 
+```
+class VoziloFactory {
+  private static $instanca = null;
+
+  private function __construct() {}
+
+  public function __clone() {}
+  public function __wakeup() {}
+
+  public static getInstance() {
+    if (self::$instanca === null) {
+      self::$instanca = new self();
+    }
+
+    return self::$instanca;
+  }
+
+  public static function create($tip) {
+    switch($tip) {
+      case 'automobil':
+        return new Automobil();
+      case 'bicikl':
+        return new Bicikl();
+      case 'motor':
+        return new Motor();
+      default:
+        throw new InvalidArgumentException('Nepoznat tip vozila: ' . $tip);
+    }
+  }
+
+  public function createVozilo($tip) {
+    return VoziloFactory::create($tip);
+  }
+}
 ```
