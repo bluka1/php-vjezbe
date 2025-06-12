@@ -524,3 +524,131 @@ class VoziloFactory {
   }
 }
 ```
+
+#### Iterator obrazac
+Iterator obrazac je obrazac kojim se omogućuje sekvencijalni pristup elementima kolekcije(niz, asocijativni niz...) bez otkrivanja unutarnje implementacije te kolekcije.
+On omogućuje prolazak kroz kolekciju bez poznavanja njene strukture te pruža standardizirani način iteracije.
+
+Prednosti:
+1. standardizirani pristup - ista sintaksa za različite kolekcije
+2. enkapsulacija - skriva unutarnju strukturu
+3. fleksibilnost - može imati različite načine iteracije
+
+```
+class KolekcijaKnjiga implements Iterator {
+  $knjige = [];
+  $pozicija = 0;
+
+  public function dodajKnjigu($knjiga) {
+    $this->knjige[] = $knjiga;
+  }
+
+  public function current() {
+    // vraća trenutni element
+    return $this->knjige[$this->pozicija];
+  }
+
+  public function key() {
+    // vraća ključ trenutog elementa
+    return $this->pozicija;
+  }
+
+  public function next() {
+    // nastavlja na sljedeći element
+    $this->position++;
+  }
+  public function rewind() {
+    // vraća iterator na prvi element
+    $this->position = 0;
+  }
+  public function valid() {
+    // provjerava je li trenutna pozicija valjana
+    // return count($this->knjige) - 1 >= $this->pozicija;
+    return isset($this->knjige[$this->pozicija]);
+  }
+}
+
+$novaKolekcija = new KolekcijaKnjiga();
+$novaKolekcija->dodajKnjigu('Papa Franjo');
+$novaKolekcija->dodajKnjigu('Dvojica Pape');
+
+foreach($novaKolekcija as $kljuc => $knjiga) {
+  echo "$kljuc : $knjiga";
+}
+```
+
+#### Observer obrazac
+Obrserver obrazac omogućuje objektu da obavijesti više drugih objekata (observers) o promjenama u svom stanju.
+Često se koristi za obavijesti, logging sustave, event handling i slično.
+
+Prednosti:
+1. loose coupling - subject i observer su slabo povezani
+2. dinamiċnost - možemo dodavati/uklanjati ovservere tijekom izvršavanja
+3. proširivost - lako dodavanje novih tipova observera
+
+```
+interface Subject {
+  public function attach(Observer $observer);  
+  public function detach(Observer $observer);
+  public function notify();
+}
+
+interface Observer {
+  public function update(Subject $subject);
+}
+
+class Youtuber implements Subject {
+  $observers = [];
+  $newVideo;
+
+  public function attach(Observer $observer) {
+    $this->observers[] = $observer;
+  }
+
+  public function detach(Observer $observer) {
+    $key = array_search($observer, $this->observers);
+    if ($key !== false) {
+      unset($this->observers[$key]);
+    }
+  }
+
+  public function notify() {
+    foreach($this->observers as $observer) {
+      $observer->update();
+    }
+  }
+
+  public function getVideo() {
+    return $this->newVideo;
+  }
+
+  public function setVideo(string $video) {
+    $this->newVideo = $video;
+    $this->notify();
+  }
+}
+
+class Subscriber implements Observer {
+  $ime;
+
+  public function __construct($ime) {
+    $this->ime = $ime;
+  }
+
+  public function update(Subject $subject) {
+    echo $this-ime . ' je primio obavijest o novom video koji se zove: ' . $subject->getVideo(); 
+  }
+}
+
+$youtuber = new Youtuber();
+
+$subscriber1 = new Subscriber('Mate');
+$subscriber2 = new Subscriber('Miso');
+$subscriber3 = new Subscriber('Kovac');
+
+$youtuber->attach($subscriber1);
+$youtuber->attach($subscriber2);
+$youtuber->attach($subscriber3);
+
+$youtuber->setVideo('NOVIIII VIDEOOOOOO');
+```
