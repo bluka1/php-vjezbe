@@ -652,3 +652,5 @@ $youtuber->attach($subscriber3);
 
 $youtuber->setVideo('NOVIIII VIDEOOOOOO');
 ```
+
+*** Ostale obrasce i korisne materijale možete naći na: [https://refactoring.guru/](https://refactoring.guru/)
