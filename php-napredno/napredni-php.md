@@ -654,3 +654,138 @@ $youtuber->setVideo('NOVIIII VIDEOOOOOO');
 ```
 
 *** Ostale obrasce i korisne materijale možete naći na: [https://refactoring.guru/](https://refactoring.guru/)
+
+## MySQL konekcija
+
+### MySQLi (MySQL improved)
+To je PHP ekstenzija koja omogućuje rad s MySQL bazama podataka te predstavlja unaprijedenu verziju MySQL ekstenzije.
+Pruža objektno orijentirano i proceduralno sučelje, podršku za prepared statemente(pripremljene naredbe), podršku za transakcije, poboljšane sigurnosne značajke te poboljšane performanse.
+
+Osnovne metode:
+- query() - izvršava SQL upit
+- prepare() - priprema SQL naredbu (štiti nas od SQL injectiona)
+- fetch_assoc() - dohvaća red kao asocijativni niz
+- fetch_array() - dohvaća red kao numerički niz i asocijativni
+- fetch_row() - dohvaća red kao numerički niz
+- num_rows - broj redova u rezultatu
+- affected_rows() - broj pogodenih redova
+- insert_id - ID zadnje umetnutog reda
+
+Načini korištenja:
+1. proceduralno
+
+```
+$connection = mysqli_connect('host', 'korisnik', 'lozinka', 'baza');
+
+if (!$connection) {
+  die('Konekcija na bazu nije bila uspješna: ' . mysqli_connect_error());
+}
+
+$sqlUpit = "SELECT * FROM korisnici";
+
+$rezultati = mysqli_query($sqlUpit);
+
+while($row = mysqli_fetch_assoc($rezultati)) {
+  echo $row['ime'] . ' ' . $row['prezime'] . '\n';
+}
+
+mysqli_close($connection);
+```
+
+2. objektno orijentirano
+
+```
+$mysqli = new mysqli('host','korisnik','lozinka','baza');
+
+if ($mysqli->connect_error) {
+  die('Konekcija na bazu nije uspjela: ' . $mysqli->connect_error);
+}
+
+$sqlUpit = "SELECT * FROM korisnici";
+
+$rezultati = $mysqli->query($sqlUpit);
+
+while($row = $rezultati->fetch_assoc()) {
+  echo $row['ime'] . ' ' . $row['prezime'] . '\n';
+}
+
+$mysqli->close();
+```
+
+3. izrada vlastite klase
+```
+class Db {
+  private $host = 'localhost:3306';
+  private $korisnik = 'root';
+  private $lozinka = 'vasaDugaLozinka';
+  private $baza = 'videoteka';
+  private $konekcija;
+
+  public function __construct() {
+    $this->connect();
+  }
+
+  public function connect() {
+    $this->konekcija = new mysqli(
+      $this->host,
+      $this->korisnik,
+      $this->lozinka,
+      $this->baza,
+    );
+
+    if ($this->konekcija->connect_error) {
+      throw new Exception('Konekcija na bazu nije uspjela: ' . $this->konekcija->connect_error);
+    }
+  }
+
+  public function getKonekcija() {
+    return $this->konekcija;
+  }
+
+  public function query($sqlUpit) {
+    $rezultati = $this->konekcija->query($sqlUpit);
+
+    if (!$rezultati) {
+      throw new Exception('Greška u upitu: ' . $this->konekcija->error);
+    }
+
+    return $rezultati;
+  }
+
+  public function close() {
+    if ($this->konekcija) {
+      $this->konekcija->close();
+    }
+  }
+
+  public function __destruct() {
+    $this->close();
+  }
+}
+
+try {
+  $db = new Db();
+  $rezultati = $db->query("SELECT * FROM korisnici");
+  while($row = $rezultati->fetch_assoc()) {
+    echo $row['ime'] . ' ' . $row['prezime'] . '\n';
+  }
+} catch(Exception $e) {
+  echo 'Greška: ' . $e->getMessage();
+}
+```
+
+#### Izbjegavanje SQL injection napada
+
+**LOŠE**
+```
+$username = $_POST['username'];
+$query = "SELECT * FROM korisnici WHERE username = '$username'";
+```
+
+**MALO BOLJE**
+```
+$username = $mysqli->real_escape_string($_POST['username']);
+$query = "SELECT * FROM korisnici WHERE username = '$username'";
+```
+
+**NAJBOLJE** -> prepared statements (obradit ćemo u nastavku)
