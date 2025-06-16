@@ -136,7 +136,7 @@ is_int();
 is_array();
 is_bool();
 // isset();
-empty();
+// empty();
 
 // eksplicitne konverzije podataka
 $tekst = '10';
@@ -163,11 +163,11 @@ echo '1' + '2' . '3'; // 33
 
 var_dump(0 === '0'); // false
 
-declare(strict_types=1); // deklaracija tipova podataka (OBAVEZNO NA VRH FILEA)
+//declare(strict_types=1); // deklaracija tipova podataka (OBAVEZNO NA VRH FILEA)
 
-function zbroj (int $a, int $b) {
-  return $a + $b;
-}
+// function zbroj (int $a, int $b) {
+//   return $a + $b;
+// }
 
 zbroj('2', '3'); // greska
 
@@ -187,11 +187,11 @@ $x = $_POST['brojCipela'] ?? 45;
 $arr = [
   $key => $value,
   $key1 => $value1
-]
+];
 
 $arr[] = [
   $key => $value
-]
+];
 
 $arr['key1'] = $value1;
 
@@ -287,9 +287,9 @@ function oduzmi($a, $b = 10) {
 
 // oduzmi(20); // 10 -> b je po defaultu postavljen na 20
 
-function zbroj(int $a, int $b): int {
-  return $a + $b;
-}
+// function zbroj(int $a, int $b): int {
+//   return $a + $b;
+// }
 
 $num = 0;
 function povecaj(&$num) {
@@ -315,12 +315,12 @@ $y = 10; // globalna promjenljiva
 
 $globalnaVarijabla = 1;
 
-function lokalniScope() use ($globalnaVarijabla) {
+$lojalniScope =  function() use ($globalnaVarijabla) {
   $y = 20; // lokalna varijabla
   $x = 5;
 
-  global $globalnaVarijabla; // referenca na globalnu varijablu
-}
+  // global $globalnaVarijabla; // referenca na globalnu varijablu
+};
 
 echo $x; // greska
 
