@@ -941,3 +941,76 @@ class BankovniTransfer {
   }
 }
 ```
+
+### PDO (PHP Data Objects)
+Moderna PHP ekstenzija za rad s bazama podatka. To je apstraktni sloj za pristup bazama podataka koji omogućuje rad s različitim tipovima baza podataka koristeći isti kod.
+PDO podržava: MySQL, PostgreSQL, SQLite, Oracle DB, Microsoft SQL server...
+
+Prednosti PDO-a u odnosu na MySQLi:
+1. nezavisnost o bazi podataka (database agnostic) - isti kod za rad s različitim bazama
+2. objektno orijentiran pristup - čišći kod (nije prednost, više značajka)
+3. bolje rukovanje greškama (bolji error handling)
+4. imenovani parametri (named parameters) - umjesto ? koriste se imenovani parametri kod prepared statementa
+5. različiti modovi dohvaćanja podataka - veća fleksibilnost
+
+Razlike MySQLi-a u odnosu na PDO:
+```
+// mysqli
+$mysqli = new mysqli('localhost', 'username', 'password', 'baza');
+$stmt = $mysqli->prepare("SELECT * FROM korisnici WHERE id = ?");
+$stmt->bind_param('i', $id);
+
+// PDO
+$pdo = new PDO('mysql:host=localhost;dbname=korisnici', 'username', 'password');
+$stmt = $pdo->prepare("SELECT * FROM korisnici WHERE id = :id");
+$stmt->bind_param(':id', $id);
+```
+
+Primjer PDO konekcije
+```
+class DbPDO {
+  private $host = 'localhost';
+  private $username = 'vasKorisnik';
+  private $password = 'vasaLozinka';
+  private $baza = 'imeBaze';
+  private $pdo;
+
+  public function __construct() {
+    $this->connect();
+  }
+
+  public function connect() {
+    $konekcija = "mysql:host={$this->host};dbname={$this->baza}";
+    // $konekcija = "pgsql:host={$this->host};dbname={$this->baza}";
+    // $konekcija = "sqlite:/putanja/do/baze.db";
+    // $konekcija = "sqlsrv:Server={$this->host};Database={$this->baza}";
+
+    $opcije = [
+      PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+      PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+      PDO::ATTR_EMULATE_PREPARES => false
+    ];
+
+    try {
+      $this->pdo = new PDO($konekcija, $this->username, $this->password, $opcije);
+    } catch(PDOException $e) {
+      throw new Exception('Konekcija nije uspjela: ' . $e->getMessage());
+    }
+  }
+
+  public function getPdo() {
+    return $this->pdo;
+  }
+}
+```
+
+PDO opcije:
+1. `PDO::ATTR_ERRMODE` - definira hoće li PDO baciti grešku ili će (kao po defaultu) ne javiti ništa
+2. `PDO::ATTR_DEFAULT_FETCH_MODE` - definira standardni format u kojem će PDO vraćati retke iz baze
+3. `PDO::ATTR_EMULATE_PREPARES` - definira hoće li PDO "glumiti" prepared statemente ili će stvarno koristiti prave, nativne prepared statemente
+4. `PDO::ATTR_PERSISTENT` - definira hoće li PDO stvoriti stalnu konekciju koja se neće zatvoriti nakon završetka skripte
+5. `PDO::ATTR_INIT_COMMAND` - definira naredbu koja će se izvršiti ofmah nakon uspostave konekcije
+6. `PDO::ATTR_TIMEOUT` - definira vrijeme u sekundama nakon kojeg se prekida konekcija ako baza ne odgovori
+7. `PDO::ATTR_CASE` - definira hoće li imena stupaca u vraćenim rezultatima biti definirana velikim, malim slovima ili onako kako su zapisana u bazi
+8. `PDO::ATTR_STRINGIFY_FETCHES` - definira hoće li sve vrijednosti dohvaćene iz baze biti pretvorene u stringove
+
