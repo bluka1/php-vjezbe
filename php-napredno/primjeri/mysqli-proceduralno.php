@@ -1,9 +1,9 @@
 <?php 
 
 $dbhost = 'localhost:3306';
-$korisnik = 'root';
-$lozinka = 'Lozinka123.';
-$baza = 'zaposlenici';
+$korisnik = 'vasKorisnik';
+$lozinka = 'vasaLozinka';
+$baza = 'vasaBaza';
 $konekcija = null;
 
 try {
