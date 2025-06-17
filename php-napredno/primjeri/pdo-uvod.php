@@ -1,9 +1,9 @@
 <?php
 
 $dbhost = 'localhost';
-$korisnik = 'root';
-$lozinka = 'Lozinka123.';
-$baza = 'zaposlenici';
+$korisnik = 'vasKorisnik';
+$lozinka = 'vasaLozinka';
+$baza = 'vasaBaza';
 
 try {
   $pdo = new PDO("mysql:host={$dbhost};dbname={$baza}", $korisnik, $lozinka);
