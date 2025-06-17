@@ -788,4 +788,156 @@ $username = $mysqli->real_escape_string($_POST['username']);
 $query = "SELECT * FROM korisnici WHERE username = '$username'";
 ```
 
-**NAJBOLJE** -> prepared statements (obradit ćemo u nastavku)
+**NAJBOLJE** -> prepared statements
+```
+$stmt = $this->mysqli->prepare("SELECT id, ime, email FROM korisnici WHERE id = ?");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+```
+
+#### Prepared statements
+Prepared statementi su pripremljeni SQL upiti odnosno naredbe, a ujedno su i najsigurniji način izvršavanja SQL upita jer:
+- sprječavaju SQL injection napade
+- poboljšavaju performanse za ponavljajuće upite
+- omogućuju čišći kod
+
+primjer SQL injection napada
+```
+$username = $_POST['username'];
+// ...ostatak koda
+$sqlUpit = "SELECT * FROM korisnici where username = $username";
+
+// korisnik potencijalno može ubaciti maliciozan kod i izmjeniti prepostavljeno ponašanje našeg upita
+// tako na primjer u polje username može ubaciti sljedeći kod: "a OR '1' = '1'"
+// kada se taj kod ubaci u naš SQL query, on će izgledati ovako:
+SELECT * FROM korisnici where username = a OR '1' = '1';
+// ...ostatak koda
+```
+
+4 faze koje se dešavaju kod upita na SQL bazu:
+1. parsiranje (analiza i provjera sintakse)
+2. validacija (ima li trenutni korisnik potrebna prava za ovaj upit te postoje li sve tablice u bazi koja je navedena)
+3. optimizacija (koje indekse koristiti da najbolje iskoristim resurse za ovaj upit)
+4. izvršavanje (dohvaćanje podataka iz upita)
+
+Prepared statementi za nas pripremaju prve 3 faze obrade SQL upita te se svaki proslijedeni parametar tretira kao string koji ne može promijeniti ponašanje SQL upita. Zatim nakon pripreme upita ostaje samo izvršavanje upita što može znatno poboljšati performanse.
+
+Tipovi parametara za bind_param metodu:
+- i - integer
+- d - double
+- s - string
+- b - blob (binarni podaci)
+
+```
+class UserManager {
+  private $mysqli;
+
+  public function __construct($mysqli) {
+    $this->mysqli = $mysqli;
+  }
+
+  public function getUserById($id) {
+    // pripremi upit
+    $stmt = $this->mysqli->prepare("SELECT * FROM korisnici WHERE id = ?");
+
+    if (!$stmt) {
+      throw new Exception('Greška prilikom izrade statementa: ' . $this->mysqli->error);
+    }
+
+    // dodaj parametre
+    $stmt->bind_param('i', $id);
+
+    // izvrši upit
+    $stmt->execute();
+
+    // dohvati rezultate
+    $rezultati = $stmt->get_result();
+
+    // dohvati usera
+    $user = $rezultati->fetch_assoc();
+
+    $stmt->close();
+    return $user;
+  }
+
+  public function createUser($ime, $prezime) {
+    // pripremi upit
+    $stmt = $this->mysqli->prepare("INSERT INTO korisnici (ime, prezime) VALUES (?, ?)");
+
+    if (!$stmt) {
+      throw new Exception('Greška prilikom izrade statementa: ' . $this->mysqli->error);
+    }
+
+    // dodaj parametre
+    $stmt->bind_param('ss', $ime, $prezime);
+
+    // izvrši upit
+    if (!$stmt->execute()) {
+      throw new Exception('Greška prilikom izvršavanja statementa: ' . $this->mysqli->error);
+    }
+
+    $insertId = $this->mysqli->insert_id;
+
+    $stmt->close();
+    return $insertId;
+  }
+}
+```
+
+#### Transakcije
+Tranasakcije su skup SQL naredbi koje tvore jednu atomsku operaciju - ili se sve izvrši uspješno ili se ništa ne izvrši.
+
+```
+class BankovniTransfer {
+  private $mysqli;
+
+  public function __construct($mysqli) {
+    $this->mysqli = $mysqli;
+  }
+
+  public function prebaciNovac($racunPosiljatelja, $racunPrimatelja, $iznos) {
+    // započni transakciju
+    $this->mysqli->autocommit(false);
+
+    try {
+      // provjeri ima li pošiljatelj dovoljno novca na računu
+      $stmt = $this->mysqli->prepare("SELECT stanje FROM racuni WHERE iban = ?");
+      $stmt->bind_param('s', $racunPosiljatelja);
+      $stms->execute();
+      $rezultat = $stmt->get_result();
+      $stanjeRacuna = $rezultat->fetch_assoc();
+      $stmt->close();
+
+      if ($stanjeRacuna['stanje'] < $iznos) {
+        throw new Exception('Nedovoljan iznos novca na računu.');
+      }
+
+      // oduzmi novac s pošiljateljevog računa
+      $stmt = $this->mysqli->prepare("UPDATE racuni SET stanje = stanje - ? WHERE iban = ?");
+      $stmt->bind_param('ds', $iznos, $racunPosiljatelja);
+      if (!$stmt->execute()) {
+        throw new Exception('Greška prilikom oduzimanja novca sa stanja pošiljatelja: ' . $this->mysqli->error);
+      }
+      $stmt->close();
+
+      // dodaj novac na primateljev račun
+      $stmt = $this->mysqli->prepare("UPDATE racuni SET stanje = stanje + ? WHERE iban = ?");
+      $stmt->bind_param('ds', $iznos, $racunPrimatelja);
+      if (!$stmt->execute()) {
+        throw new Exception('Greška prilikom dodavanja novca na stanje primatelja: ' . $this->mysqli->error);
+      }
+      $stmt->close();
+
+      // potvrdi transakciju
+      $this->mysqli->commit();
+      return true;
+    } catch(Exception $e) {
+      // vrati sve promjene na početno stanje
+      $this->mysqli->rollback();
+      throw $e;
+    } finally {
+      $this->mysqli->autocommit(true);
+    }
+  }
+}
+```
