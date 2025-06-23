@@ -1014,3 +1014,15 @@ PDO opcije:
 7. `PDO::ATTR_CASE` - definira hoće li imena stupaca u vraćenim rezultatima biti definirana velikim, malim slovima ili onako kako su zapisana u bazi
 8. `PDO::ATTR_STRINGIFY_FETCHES` - definira hoće li sve vrijednosti dohvaćene iz baze biti pretvorene u stringove
 
+Osnovne PDO metode:
+1. `exec()` - metoda za upite koji ne vraćaju rezultate (npr. kreiranje nove tablice, pogleda i sl.)
+2. `query()` - metoda za statičke upite odnosno upite koji ne primaju parametre (npr. dohvati sve zaposlenike)
+3. `prepare()` - metoda za dinamičke upite u koje prosljedujemo parametre
+4. `execute()` - metoda za izvršavanje upita na bazi
+5. `bind_param()` - metoda za dodavanje parametara u prepared statemente
+6. `setAttribute()` - metoda za postavljanje atributa tj. opcija na PDO konekciju
+7. `getAttribute()` - metoda za dohvaćanje atributa
+8. `beginTransaction()` - metoda za pokretanje transakcija
+9. `commit()` - metoda za trajno spremanje svih promjena uzrokovanih izvršavanjem upita na bazi unutar transakcije
+10. `fetch()` - metoda za dohvaćanje jednog(prvog sljedećeg) rezultata nakon izvršavanja `execute()` metode nad statementom
+11. `rowCount()` - metoda za dohvaćanje ukupnog broja redaka iz baze koje smo dohvatili
