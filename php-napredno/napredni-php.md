@@ -1026,3 +1026,23 @@ Osnovne PDO metode:
 9. `commit()` - metoda za trajno spremanje svih promjena uzrokovanih izvršavanjem upita na bazi unutar transakcije
 10. `fetch()` - metoda za dohvaćanje jednog(prvog sljedećeg) rezultata nakon izvršavanja `execute()` metode nad statementom
 11. `rowCount()` - metoda za dohvaćanje ukupnog broja redaka iz baze koje smo dohvatili
+
+--- 
+
+## TDD (Test Driven Development)
+TDD je pristup programiranju u kojem prvo pišete testove pa tek onda glavni kod. Dakle, polazi se od zahtjeva koje aplikacija treba ispuniti pa se tek onda implementira samo rješenje.
+
+Prednosti:
+1. bolja kvaliteta koda - kod je sam po sebi dizajniran da bude testabilan
+2. manje bugova - problemi se otkrivaju odmah kod pisanja implementacije
+3. bolja dokumentacija - testovi mogu poslužiti kao "živa" dokumentacija
+4. jednostavniji refactoring - bez straha od novih bugova
+5. bolji dizajn - prisiljava nas da razmišljamo prvo o sučeljima pa tek onda o implementaciji
+
+Proces TDD-a je podijeljen u 3 faze:
+1. RED faza - napišemo test (koji neće prolaziti jer implementacija na postoji)
+2. GREEN faza - napišemo najmanji mogući kod da test prode (npr. hardkodiramo vrijednosti samo da test prode)
+3. REFACTOR faza - poboljšavamo kod(implementiramo i mijenjamo implementaciju) bez mijenjanja funkcionalnosti
+
+Proces TDD-a izgleda otprilike ovako:
+RED -> GREEN -> REFACTOR -> RED -> GREEN -> REFACTOR -> RED -> GREEN -> REFACTOR -> ...
