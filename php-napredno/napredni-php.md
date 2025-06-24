@@ -1208,7 +1208,124 @@ Proces instalacije:
 - `coverage` - definira postavke za code coverage
 - `php` - definira environment varijable za testove
 
-#### Osnovne naredbe
+
+Fixtures su pomoćne metode unutar testova koje se fokusiraju na okolinu odnosno pripremu i čišćenje okoline u kojoj se testovi izvršavaju. Dakle, u tim metodama najčešće se pripremaju konekcije, stvaraju klase, čiste resursi, brišu stvorene datoteke i slično.
+
+DataProviders su anotacije koje se fokusiraju na podatke potrebne u testovima. Oni se referiraju na stvorene funkcije koje nam proslijeduju podatke potrebne za višestruko izvršavanje istog testa.
+
+#### Primjer unit testa
+```php
+<?php
+
+namespace MojProjekt\Tests;
+
+use PHPUnit\Framework\TestCase;
+use MojProjekt\Calculator;
+
+class CalculatorTest extends TestCase {
+  private Calculator $caculator;
+
+  // fixture koji se izvršava prije svakog testa
+  protected function setUp() : void {
+    $this->calculator = new Calculator();
+  }
+
+  // fixture koji se izvršava nakon svakog testa
+  protected function tearDown() : void {
+    $this->calculator = null;
+  }
+
+  // fixture koji se izvršava prije svih testova u klasi
+  public static function setUpBeforeClass() {
+    // priprema podatka, konekcija na test bazu i sl.
+  }
+
+  // fixture koji se izvršava nakon svih testova u klasi
+  public static function tearDownAfterClass() {
+    // čišćenje resursa - npr. brisanje datoteka kreiranih kroz testove
+  }
+
+  public function testAddTwoNumbers() : void {
+    $result = $this->calculator->add(2,3);
+    $this->assertEquals(5, $result);
+  }
+}
+>
+```
+
+#### Osnovne naredbe (osnovne metode)
+Jednakost:
+- assertEquals - `$this->assertEquals($očekivaniRezultat, $rezultatMetode)`
+- assertSame - `$this->assertSame($očekivaniRezultat, $rezultatMetode)` (stroža provjera od assertEquals)
+
+Booleans:
+- assertTrue - `$this->assertTrue($calculator->isBiggerThan(4,3))` (provjerava li argument True)
+- assertFalse - `$this->assertFalse($calculator->isLessThan(4,3))` (provjerava li argument false)
+
+Null:
+- assertNull - (provjerava je li argument null)
+- assertNotNull - (provjerava je li argument različit od null)
+
+Nizovi:
+- assertContains - (provjerava sadržava li niz traženi argument)
+- assertCount - (provjerava je li dužina array argumenta odgovara prvom argumentu)
+- assertEmpty - (provjerava je li array argument prazan)
+
+Stringovi:
+- assertStringContains - (provjerava sadrži li string traženi argument)
+- assertStringStartsWith - (provjerava započinje li string traženim argumentom)
+- assertMatchesRegularExpression - (provjerava ispunjava li proslijedeni argument zadani regularni izraz)
+
+Objekti:
+- assertInstanceOf - (provjerava je li proslijedeni objekt instanca proslijedene klase)
+
+Datoteke:
+- assertFileExists - (provjerava postoji li datoteka na proslijedenoj ruti)
+
+Iznimke:
+- expectException - (provjerava baca li kod iznimku)
+- expectExceptionMessage - (provjerava sadrži li iznimka traženu poruku)
+
+#### Pokretanje testova (pokretanje u terminalu)
+- svi testovi - `./vendor/bin/phpunit`
+- specifična test klasa - `./vendor/bin/phpunit tests/CalculatorTest.php`
+- specifičan test - `./vendor/bin/phpunit --filter testAdd`
+- s code coverageom - `./vendor/bin/phpunit --coverage-html coverage`
+- s detaljnijim outputom - `./vendor/bin/phpunit --verbose`
+- testovi po grupama - `./vendor/bin/phpunit --group integration`
+- s izostavljenom grupom - `./vendor/bin/phpunit --exclude-group slow`
+
+#### Data providers
+To su kombinacija anotacije naveden u komentaru i definirane metode u samoj klasi testa. Data provideri služe situaciji kada moramo istestirati jednu funkcionalnost s više različitih setova podataka da bismo istestirali sve scenarije koji se mogu desiti.
+
+Primjer s data providerom i grupiranjem:
+
+```php
+
+<?php
+class CalculatorTest extends TestCase {
+  /*
+  * @group slow - anotacija za grupiranje testova
+  * @dataProvider dodatniPodaci
+  */
+
+   public function testAddTwoNumbers(int $a, int $b, int $expected) : void {
+    $calulator = new Calculator();
+    $result = $calculator->add($a, $b);
+    $this->assertEquals($expected, $result);
+  }
+
+  public function dodatniPodaci() : array {
+    return [
+      'pozitivniBrojevi' => [1, 2, 3], // testAddTwoNumbers(1,2,3);
+      'negativniBrojevi' => [-1, -2, -3],
+      'nule' => [0, 0, 0],
+      ...
+    ]
+  }
+}
+
+```
 
 PHPUnit najbolje prakse:
 1. jedan koncept po testu - testirajte jednu stvar
