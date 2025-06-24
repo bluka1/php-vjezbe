@@ -28,7 +28,7 @@ Glavne prednosti OOP-a:
 Klasa je "nacrt" na temelju kojeg nastaje novi primjerak nekog objekta.
 Objekt je primjerak nastao na temelju neke klase.
 
-```
+```php
 class ImeKlase {
   // svojstva
   // metode
@@ -46,7 +46,7 @@ Svojstva deklariramo na sljedeći način:
 1. odredimo djelokrug(visibility) svojstva (public, private, protected)
 2. dodijelimo ime svojstva (poput deklariranja varijable)
 
-```
+```php
 class Osoba {
   // svojstva
   public $ime;
@@ -58,7 +58,7 @@ class Osoba {
 Metode su funkcije definirane unutar klase. One definiraju ponašanje odnosno funkcionalnosti objekta.
 Deklariraju se na isti način kao i obične funkcije uz dodatak djelokruga.
 
-```
+```php
 class Osoba {
   // svojstva
   public $ime;
@@ -73,7 +73,7 @@ class Osoba {
 
 `$this` ključna riječ je pseudo-varijabla koja se odnosi na trenutni objekt i time nam pomaže pristupiti svojstvima i metodama na trenutnom objektu.
 
-```
+```php
 class Osoba {
   // svojstva
   public $ime;
@@ -103,7 +103,7 @@ Njegova glavna svrha je inicijalizacija objekta odnosno postavljanje početnih v
 Destruktor je posebna metoda unutar klase koja se automatski poziva kada objekt više nije potreban odnosno kada skripta završi izvodenje. Svrha mu je čišćenje resursa koje je objekt koristio (npr. oslobadanje zauzete memorije, zatvaranje konekcije na bazu i sl.).
 Destruktori su najkorisniji kada radimo s vanjskim resursima poput baza podataka ili datoteka. Oni osiguravaju da su ti resursi ispravno zatvoreni.
 
-```
+```php
 class NekoImeKlase {
   // svojstva
   $ime;
@@ -124,7 +124,7 @@ $noviObjekt = new NekoImeKlase('Matko', 'Matkić');
 
 Umjesto da čekamo na destruktor da pokrene `__destruct()` metodu, ako znamo da nam neki objekt više nije potreban u aplikaciji, mi možemo manualno uništiti objekt pomoću `unset` funkcije.
 
-```
+```php
 unset($noviObjekt);
 ```
 
@@ -138,7 +138,7 @@ Apstraktna klasa može sadržavati:
 
 Apstraktnu klasu definiramo pomoću ključne riječi `abstract class` dok apstraktne metode definiramo pomoću ključne riječi `abstract function`.
 
-```
+```php
 abstract class Zivotnja {
   public $vrsta;
 
@@ -166,7 +166,7 @@ U usporedbi s apstraktnim klasama, sučelja:
 - ne mogu sadržavati svojstva
 - klasa može implementirati jedno ili više sučelja (koristeći `implements` ključnu riječ)
 
-```
+```php
 interface MozeGovoriti {
   public function govori($poruka);
 }
@@ -212,7 +212,7 @@ primjer:
 
 
 `MojaAplikacija/Korisnici/Korisnik.php`
-```
+```php
 <?php
   namespace MojaAplikacija\Korisnici
 
@@ -231,7 +231,7 @@ primjer:
 
 Korištenje imenskih prostora i kreiranje aliasa:
 `MojaApikacija/index.php`
-```
+```php
 <?php
   ...
   // import klase koju namjeravamo koristiti
@@ -284,7 +284,7 @@ Kako funkcionira try-catch-finally blok?
 4. finally blok - izvršava se na kraju, neovisno o tome je li došlo do greške ili nije (nije ga obavezno pisati) - često za čišćenje resursa, zatvaranje konekcija i sl.
 
 Sintaksa `try-catch-finally` bloka:
-```
+```php
 try {
   ...
   // kod koji može uzrokovati iznimku
@@ -302,7 +302,7 @@ try {
 
 Više iznimaka i različiti tipovi iznimaka:
 
-```
+```php
 try {
   $pdo = new PDO("mysql:host=localhost;dbname=test", $user, $password);
   $file = file_get_contents('nepostojeciFile.txt');
@@ -383,7 +383,7 @@ Prilikom kreiranja instance objekta generalno, postoje 3 načina za izradu objek
 Da bismo osigurali da neka klasa može biti isključivo singleton objekt, moramo "zatvoriti" sve načine instanciranja objekta iz klase.
 Iz tog razloga konstruktor nam mora biti privatan isto kao i `__clone()` i `__wakeup()` metode koje služe kreiranju objekta. `__clone()` je metoda za kloniranje i izradu nove instance objekta dok `__wakeup()` metoda služi da bi se neki string (npr. koji smo dobili iz JSON filea) pretvorio u objekt.
 
-```
+```php
 class Database {
   private static $instance = null;
   private $connection;
@@ -433,7 +433,7 @@ Prednosti korištenja factory obrasca:
 2. centralizirana logika - sva logika kreiranja nalazi se na samo jednom mjestu
 3. loose coupling - kod ne ovisi o konkretnim klasama
 
-```
+```php
 // sučelje koje dijele sve klase
 interface Vozilo {
   public function stani();
@@ -489,7 +489,7 @@ $vozilo2 = VoziloFactory::create('bicikl');
 
 Primjer kombinacije singleton i factory obrasca
  
-```
+```php
 class VoziloFactory {
   private static $instanca = null;
 
@@ -534,7 +534,7 @@ Prednosti:
 2. enkapsulacija - skriva unutarnju strukturu
 3. fleksibilnost - može imati različite načine iteracije
 
-```
+```php
 class KolekcijaKnjiga implements Iterator {
   $knjige = [];
   $pozicija = 0;
@@ -586,7 +586,7 @@ Prednosti:
 2. dinamiċnost - možemo dodavati/uklanjati ovservere tijekom izvršavanja
 3. proširivost - lako dodavanje novih tipova observera
 
-```
+```php
 interface Subject {
   public function attach(Observer $observer);  
   public function detach(Observer $observer);
@@ -674,7 +674,7 @@ Osnovne metode:
 Načini korištenja:
 1. proceduralno
 
-```
+```php
 $connection = mysqli_connect('host', 'korisnik', 'lozinka', 'baza');
 
 if (!$connection) {
@@ -694,7 +694,7 @@ mysqli_close($connection);
 
 2. objektno orijentirano
 
-```
+```php
 $mysqli = new mysqli('host','korisnik','lozinka','baza');
 
 if ($mysqli->connect_error) {
@@ -713,7 +713,7 @@ $mysqli->close();
 ```
 
 3. izrada vlastite klase
-```
+```php
 class Db {
   private $host = 'localhost:3306';
   private $korisnik = 'root';
@@ -777,19 +777,19 @@ try {
 #### Izbjegavanje SQL injection napada
 
 **LOŠE**
-```
+```php
 $username = $_POST['username'];
 $query = "SELECT * FROM korisnici WHERE username = '$username'";
 ```
 
 **MALO BOLJE**
-```
+```php
 $username = $mysqli->real_escape_string($_POST['username']);
 $query = "SELECT * FROM korisnici WHERE username = '$username'";
 ```
 
 **NAJBOLJE** -> prepared statements
-```
+```php
 $stmt = $this->mysqli->prepare("SELECT id, ime, email FROM korisnici WHERE id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();
@@ -802,7 +802,7 @@ Prepared statementi su pripremljeni SQL upiti odnosno naredbe, a ujedno su i naj
 - omogućuju čišći kod
 
 primjer SQL injection napada
-```
+```php
 $username = $_POST['username'];
 // ...ostatak koda
 $sqlUpit = "SELECT * FROM korisnici where username = $username";
@@ -828,7 +828,7 @@ Tipovi parametara za bind_param metodu:
 - s - string
 - b - blob (binarni podaci)
 
-```
+```php
 class UserManager {
   private $mysqli;
 
@@ -887,7 +887,7 @@ class UserManager {
 #### Transakcije
 Tranasakcije su skup SQL naredbi koje tvore jednu atomsku operaciju - ili se sve izvrši uspješno ili se ništa ne izvrši.
 
-```
+```php
 class BankovniTransfer {
   private $mysqli;
 
@@ -954,7 +954,7 @@ Prednosti PDO-a u odnosu na MySQLi:
 5. različiti modovi dohvaćanja podataka - veća fleksibilnost
 
 Razlike MySQLi-a u odnosu na PDO:
-```
+```php
 // mysqli
 $mysqli = new mysqli('localhost', 'username', 'password', 'baza');
 $stmt = $mysqli->prepare("SELECT * FROM korisnici WHERE id = ?");
@@ -967,7 +967,7 @@ $stmt->bind_param(':id', $id);
 ```
 
 Primjer PDO konekcije
-```
+```php
 class DbPDO {
   private $host = 'localhost';
   private $username = 'vasKorisnik';
