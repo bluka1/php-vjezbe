@@ -1046,3 +1046,173 @@ Proces TDD-a je podijeljen u 3 faze:
 
 Proces TDD-a izgleda otprilike ovako:
 RED -> GREEN -> REFACTOR -> RED -> GREEN -> REFACTOR -> RED -> GREEN -> REFACTOR -> ...
+
+TDD najbolje prakse:
+1. pišite najjednostavniji test koji pada
+2. pišite najjednostavniji i najmanji mogući kod da test prode
+3. jedan test = jedna stvar - testirajte samo jednu funkcionalnost po testu
+4. pišite deskriptivne nazive testova
+5. AAA pattern
+    - Arrange - postavite podatke (mockajte podatke da reflektiraju stvarno stanje)
+    - Act - izvedite akciju (pozivanje metoda na klasama i slično)
+    - Assert - provjerite rezultat (usporedite očekivano i dobiveno)
+
+Kada koristiti TDD?
+- nova funcionalnost
+- složena logika
+- kritični dijelovi aplikacije
+- refactoring postojećeg koda
+
+Kada ne koristiti TDD?
+- prototipovi
+- eksperimenti
+- jednostavne CRUD aplikacije
+- hitni bugfixevi
+
+Problemi u TDD: 
+- testovi usporavaju razvoj - na početku znaju usporiti, ali kasnije mogu čak i ubrzati
+- previše testova - potrebno se fokusirati ne bitne funkcionalnosti
+- testovi su krhki - potrebno testirati ponašanje, a ne implementaciju
+- ne znamo što treba testirati - potrebno početi od tzv. happy path scenarija tj. najjednostavnijeg i najočitijeg scenarija za neki test
+
+### Composer
+Composer je dependency manager za PHP odnosno alat za upravljanje vanjskim bibliotekama (paketima) koje vaš projekt koristi. Composer je poput AppStorea za vaš PHP projekt.
+
+Prednosti korištenja composera:
+- jednostavna instalacija paketa
+- jednostavost pohranjivanja informacija o projektu u `composer.json` i `composer.lock` fileove
+- ručno preuzimanje i uključivanje biblioteka prepušteno composeru
+```php
+// bez composera
+require 'vendor/phpunit/phpunit/phpunit.php';
+require 'vendor/monolog/monolog/src/logger.php';
+... i tako dalje za sve pakete koje želimo koristiti u našoj aplikaciji
+
+// s composerom
+require 'vendor/autoload.php';
+```
+
+`composer.json`
+```php
+{
+  "name": "MojProjekt/Calculator",
+  "description": "Jednostavan kalkulator s testovima",
+  "type": "project",
+  "require": {
+    "php": ">=8.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^12"
+  },
+  "autoload": {
+    "psr-4": {
+      "MojProjekt\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "MojProjekt\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "test": "phpunit"
+  }
+}
+```
+
+- name - jedinstveno ime projekta
+- description - opis projekta
+- require - popis paketa potrebnih u produkciji
+- require-dev - popis paketa potrebnih tijekom developmenta (testovi, alati...)
+- autoload - vrši mapiranje namespacesa na direktorije
+- autoload-dev - vrši autoload za development (testovi)
+- scripts - dodavanje naredbi radi jednostavnijeg pokretanja često korištenih radnji tijekom developmenta
+
+Osnovna struktura foldera uz composer:
+```sh
+MojProjekt/
+|-- comopser.json  - metapodaci o našem projektu
+|-- composer.lock  - točne, zaključane verzije korištenih paketa (uvijek commitati na git)
+|-- vendor/  - folder s instaliranim paketima
+|   |-- autoload.php  - glavni autoloader
+|   |-- phpunit/
+|   |__ ...folderi ostalih paketa
+|-- src/  - naš kod
+|   |__ Calculator.php
+|-- tests/  - naši testovi
+|   |__ CalculatorTest.php
+|__ phpunit.xml  - konfiguracija za PHPUnit
+```
+
+#### Stvaranje novog projekta u praksi:
+1. kreiranje direktorija - `mkdir MojProjekt && cd MojProjekt`
+2. inicijalizacija composera - `composer init`
+3. dodavanje PHPUnita - `composer require --dev phpunit/phpunit`
+4. dodavanje src i tests direktorija - `mkdir src && mkdir tests`
+
+### PHPUnit
+PHPUnit je standard za izvršavanje unit testova u PHP-u. Unit testovi su testovi koji testiraju ponašanje koda odnosno neke funkcionalnosti u izolaciji (bez interakcije s ostalim dijelovima aplikacije).
+
+On nam omogućuje da:
+- pišemo i pokrećemo unit testove
+- generiramo code coverage izvještaje (izvještaji o pokrivenosti koda testovima)
+- koristimo mock objekte (za hardkodirane podatke prilikom testiranja)
+- testiramo s fixtures i data providers (pomoćne funkcionalnosti unutar PHPUnita za bolje testiranje)
+
+Proces instalacije:
+- instalacija - `composer require --dev phpunit/phpunit`
+- provjera instalacije - `./vendor/bin/phpunit --version`
+- stvaranje `phpunit.xml` datoteke
+
+#### `phpunit.xml` konfiguracija
+```xml
+<?xml version="1.0" encoding="UTF-8" ?>
+<phpunit 
+  bootstrap="vendor/autoload.php"
+  xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.3/phpunit.xsd"
+  cacheResultFile=".phpunit.cache/test-results"
+  executionOrder="depends,defects"
+  beStrictAboutOutputDuringTests="true"
+  beStrictAboutTodoAnnotatedTests="true"
+  convertDeprecationsToExceptions="true"
+  failOnRisky="true"
+  failOnWarning="true"
+  verbose="true"
+>
+  <testsuites>
+    <testsuite name="default">
+      <directory suffix="Test.php">tests</directory>
+    </testsuite>
+  </testsuites>
+
+  <coverage 
+    cacheDirectory=".phpunit.cache/code-coverage"
+    processUncoveredFiles="true"
+  >
+    <include>
+      <directory suffix=".php">src</directory>
+    </include>
+    <exclude>
+      <directory>vendor</directory>
+    </exclude>
+  </coverage>
+
+  <php>
+    <env name="APP_ENV" value="testing"/>
+    <server name="SERVER_NAME" value="localhost"/>
+  </php>
+</phpunit>
+```
+- `bootstrap` - atribut koji govori gdje se nalazi autoloader datoteka
+- `testsuites` - definira gdje se nalaze testovi
+- `coverage` - definira postavke za code coverage
+- `php` - definira environment varijable za testove
+
+#### Osnovne naredbe
+
+PHPUnit najbolje prakse:
+1. jedan koncept po testu - testirajte jednu stvar
+2. deskriptivni nazivi testova i klasa
+3. AAA pattern - arrange, act, assert
+4. neovisni testovi - svaki test treba biti neovisan
+5. brzi testovi - brzo izvršavanje
