@@ -1,0 +1,11 @@
+{
+    "name": "bluka1/testovi-dobar-primjer",
+    "autoload": {
+        "psr-4": {
+            "TestoviDobarPrimjer\\": "src/"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^12.2"
+    }
+}
