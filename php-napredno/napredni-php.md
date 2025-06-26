@@ -1304,18 +1304,13 @@ Primjer s data providerom i grupiranjem:
 
 <?php
 class CalculatorTest extends TestCase {
+  use PHPUnit\Framework\Attributes\DataProvider;
   /*
   * @group slow - anotacija za grupiranje testova
-  * @dataProvider dodatniPodaci
+  * @dataProvider dodatniPodaci (ili ovaj drugi način)
   */
-
-   public function testAddTwoNumbers(int $a, int $b, int $expected) : void {
-    $calulator = new Calculator();
-    $result = $calculator->add($a, $b);
-    $this->assertEquals($expected, $result);
-  }
-
-  public function dodatniPodaci() : array {
+  #[DataProvider('pruziPodatke')]
+  public static function dodatniPodaci() : array {
     return [
       'pozitivniBrojevi' => [1, 2, 3], // testAddTwoNumbers(1,2,3);
       'negativniBrojevi' => [-1, -2, -3],
@@ -1323,9 +1318,17 @@ class CalculatorTest extends TestCase {
       ...
     ]
   }
+
+  public function testAddTwoNumbers(int $a, int $b, int $expected) : void {
+    $calulator = new Calculator();
+    $result = $calculator->add($a, $b);
+    $this->assertEquals($expected, $result);
+  }
 }
 
 ```
+
+#### Ostali korisni materijali vezani uz testove
 
 PHPUnit najbolje prakse:
 1. jedan koncept po testu - testirajte jednu stvar
@@ -1333,3 +1336,62 @@ PHPUnit najbolje prakse:
 3. AAA pattern - arrange, act, assert
 4. neovisni testovi - svaki test treba biti neovisan
 5. brzi testovi - brzo izvršavanje
+
+
+Primjeri dobro i loše imenovanih testova:
+- `public function testUser() : void` - loše jer je preopćenito i nejasno što se testira
+- `public function testCreateUserWithValidDataReturnsUserObject() : void` - dobro jer detaljno opisuje što točno testiramo i što očekujemo od testa
+
+- `public function testCalculate() : void` - loše
+- `public function testCalculateDiscountForPremiumUserWith20PercentRate() : void` - dobro
+
+- `public function testLoginWithInvalidPasswordThrowsAuthException() : void` - dobro
+- `public function testMethod() : void` - loše
+
+
+
+Obični se testovi vode AAA patternom, ali ovisno o načinu i korištenju alata za testiranje, pattern može biti i Given-When-Then. Pri tome Given odgovara Arrange-u, When odgovara Act-u, a Then odgovara Assert-u. 
+
+Najbolje prakse za definiranje testova:
+1. jedan test = jedan za razlog za pad - testiraj jednu stvar po testu
+2. neovisnost testova - testovi ne smiju ovisiti jedan o drugom niti o vanjskim resursima
+3. ponovljivost - test uvijek mora dati isti rezultat
+4. brzina - test bi se trebao izvršiti do 100ms
+5. čitljivost - test mora biti lako razumljiv
+
+Primjeri problema i kako ih izbjeći
+```php
+public function testGetUserFromDatabase() : void {
+  $pdo = new PDO('mysql:host=localhost;dbname=testdb', 'user', 'pass');
+  // LOŠE - ovisi o nekoj stvarnoj, produkcijskoj bazi
+}
+
+public function testGetUserFromDatabase() : void {
+  $pdo = new PDO(sqlite::memory);
+  // DOBRO - test ne ovisi o nekom vanjskom resursu
+}
+
+public function testUserCompleteWorkflow() : void {
+  $user = $this->userService->createUser($data);
+  $this->userService->activateUser($user);
+  $this->userService->sendWelcomeEmail($user);
+  // LOŠE - testiramo više funkcionalnosti u jednom testu
+}
+
+// DOBRO - sljedeći testovi su dobri jer su funkcionalnosti odvojene po testovima
+public function testCreateUser() : void {}
+public function testActivateUser() : void {}
+public function testSendWelcomeEMail() : void {}
+```
+
+Kako provjeriti je li test kvalitetno napisan:
+1. Ima li test jasan, deskriptivan naziv?
+2. Je li test neovisan o drugim testovima?
+3. Testira li test jednu, specifičnu stvar?
+4. Koriste li se deskriptivni nazivi varijabli?
+5. Ima li test `assert` koji provjerava neku važnu funkcionalnost?
+6. Jesu li test podaci realistični?
+7. Jesu li edge-casevi pokriveni?
+8. Je li error handling testiran?
+9. Koriste li se mockani podaci ispravno?
+10. Je li test brz?

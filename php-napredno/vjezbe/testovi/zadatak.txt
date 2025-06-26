@@ -1,0 +1,4 @@
+1. napraviti klasu Posiljatelj
+2. dodati svojstvo stanje
+3. napraviti metode: provjeriStanje, posaljiNovac, promijeniStanje
+4. napraviti testove za sve 3 metode (po 1 test za svaku)
