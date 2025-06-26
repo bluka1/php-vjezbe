@@ -3,19 +3,17 @@ namespace TestoviDobarPrimjer\Tests;
 
 use PHPUnit\Framework\TestCase;
 use TestoviDobarPrimjer\Calculator\Calculator;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class CalculatorTest extends TestCase {
-  /*
-   * @dataProvider pruziPodatke
-   */
-  private Calculator $calculator;
-
+  private ?Calculator $calculator;
+  
   protected function setUp() : void {
     // Arrange
     $this->calculator = new Calculator();
   }
-
-  public function pruziPodatke() : array {
+  
+  public static function pruziPodatke() : array {
     return [
       'pozitivniBrojevi' => [10, 20, 30],
       'negativniBrojevi' => [-5, -7, -12],
@@ -24,9 +22,13 @@ class CalculatorTest extends TestCase {
       'negativniIPozitivniBrojevi' => [-40, 50, 10]
     ];
   }
-
+  
+  #[DataProvider('pruziPodatke')]
   public function testAdd(int $a, int $b, int $expected) : void {
+    // Act
     $result = $this->calculator->add($a, $b);
+    
+    // Assert
     $this->assertSame($result, $expected);
   }
 
