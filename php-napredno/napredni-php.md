@@ -1395,3 +1395,157 @@ Kako provjeriti je li test kvalitetno napisan:
 8. Je li error handling testiran?
 9. Koriste li se mockani podaci ispravno?
 10. Je li test brz?
+
+
+---
+
+## MVC pattern (Model-View-Controller pattern)
+MVC pattern je obrazac pisanja koda koji implementira SoC (Separation of Concerns) na način da odvaja logiku, prikaz i model baze.
+
+Zamislimo da gradimo kuću. Imali bismo:
+- Nacrt (Model) - to je plan kuće odnosno podaci koje koristimo u aplikaciji (Model se brine o dohvaćanju podataka iz baze, spremanju podataka u bazu itd.)
+- Gradevinar (Controller) - uzima nacrt i gradi kuću odnosno koordinira sve, on je mozak operacije (Controller prima zahtjeve korisnika, komunicira s Modelom da dohvati podatke i onda govori View-u što da prikaže)
+- Izgled kuće (View) - to je ono što vidimo - fasada, prozori, vrata itd. (View je ono što korisnik vidi na ekranu, prikazuje podatke koje dobije od modela)
+
+Zašto koristiti MVC?
+- preglednost - sve ima svoje mjesto, lakše je naći i popraviti pogreške
+- lakše održavanje - ako želimo promijeniti samo View, možemo to napraviti bez diranja Modela ili Controllera
+- timski rad - jedna osoba može raditi samo na View-u, druga samo na Controlleru, treća samo na modelu
+
+
+Problem: Spaghetti kod
+
+```php
+<?php
+// blog.php - SVE POMIJEŠANO!
+$host = 'localhost';
+$conn = new PDO("mysql:host=$host;dbname=blog", $user, $pass);
+
+if ($_POST['title']) {
+    $stmt = $conn->prepare("INSERT INTO articles...");
+    $stmt->execute();
+    header("Location: blog.php");
+}
+
+$articles = $conn->query("SELECT * FROM articles")->fetchAll();
+?>
+<html>
+<head><title>Blog</title></head>
+<body>
+    <h1>Moj Blog</h1>
+    <form method="POST">
+        <input name="title" placeholder="Naslov">
+        <textarea name="content"></textarea>
+        <button type="submit">Objavi</button>
+    </form>
+    
+    <?php foreach($articles as $article): ?>
+        <div>
+            <h2><?php $article['title'] ?></h2>
+            <p><?php $article['content'] ?></p>
+        </div>
+    <?php endforeach; ?>
+</body>
+</html>
+```
+
+Problemi Spaghetti koda:
+- neorganiziran kod - sve je na jednom mjestu
+- teško održavanje - promjena jedne stvari može utjecati na sve
+- nemoguće testiranje - cijeli kod je isprepleten
+- ponavljanje koda - ako imamo više stranica u aplikaciji ista logika može se nalaziti na više mjesta
+- timski rad je otežan (jer nema podjele koda)
+
+Rješenje je MVC pattern
+```
+USER REQUEST
+  |
+CONTROLLER (prima request i odlučuje što napraviti)
+  koordinira, odlučuje i usmjerava
+  |
+MODEL (dohvaća/sprema podatke)
+  podaci, baza, dio logike
+  |
+VIEW (prikazuje rezultat korisniku)
+  html, css, templates...
+  |
+USER RESPONSE
+```
+
+Kako Spaghetti kod pretvoriti u kod pisan kroz MVC pattern?
+
+MODEL (rad s podacima, validacija podataka...)
+```php
+class Article {
+    public function getAllArticles() {
+        // Dohvaćanje iz baze
+        return $this->db->query("SELECT * FROM articles")->fetchAll();
+    }
+    
+    public function createArticle($title, $content) {
+        // Validacija
+        if (empty($title)) return false;
+        
+        // Spremanje u bazu
+        $stmt = $this->db->prepare("INSERT INTO articles...");
+        return $stmt->execute([$title, $content]);
+    }
+    
+    public function deleteArticle($id) {
+        // Brisanje iz baze
+    }
+}
+```
+
+VIEW (prikaz podataka korisniku, html/css, UI, forme...)
+```html
+<html>
+<head><title><?= $title ?></title></head>
+<body>
+    <h1>Blog članci</h1>
+    
+    <?php foreach($articles as $article): ?>
+        <div class="article">
+            <h2><?php htmlspecialchars($article['title']) ?></h2>
+            <p><?php htmlspecialchars($article['content']) ?></p>
+            <small>Autor: <?php $article['author'] ?></small>
+        </div>
+    <?php endforeach; ?>
+</body>
+</html>
+```
+
+CONTROLLER (prima korisničke zahtjeve, odlučuje što učiniti, koordinira izmedu Modela i View-a...)
+
+```php
+class ArticleController {
+    public function index() {
+        // 1. Dohvati podatke iz Modela
+        $articles = $this->articleModel->getAllArticles();
+        
+        // 2. Proslijedi podatke View-u
+        $this->render('articles/index', [
+            'title' => 'Svi članci',
+            'articles' => $articles
+        ]);
+    }
+    
+    public function create() {
+        if ($_POST) {
+            // 3. Obradi POST zahtjev
+            $success = $this->articleModel->createArticle(
+                $_POST['title'], 
+                $_POST['content']
+            );
+            
+            if ($success) {
+                // 4. Preusmjeri nakon uspjeha
+                $this->redirect('articles');
+            }
+        }
+        
+        // 5. Prikaži formu
+        $this->render('articles/create');
+    }
+}
+```

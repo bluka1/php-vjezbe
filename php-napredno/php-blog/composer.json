@@ -1,0 +1,20 @@
+{
+    "name": "bluka1/php-blog",
+    "description": "Ovo je jednostavna blog aplikacija koja sluzi za vjezbu MVC patterna i svega do sada naucenog.",
+    "type": "project",
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Config\\": "config/"
+        }
+    },
+    "authors": [
+        {
+            "name": "bluka1"
+        }
+    ],
+    "require": {},
+    "scripts": {
+      "serve": "php -S localhost:8000 -t public/"
+    }
+}
