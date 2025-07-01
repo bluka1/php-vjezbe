@@ -1,11 +1,12 @@
 <?php require 'views/partials/head.php' ?>
 
-<form class="p-4">
-  <div class="form-group">
+<form method="POST" action="controllers/articlesCreateController.php" class="p-5 w-75 mx-auto">
+  <h2>Unesi novi članak</h2>
+  <div class="form-group py-3">
     <label for="naslov">Naslov</label>
     <input type="text" class="form-control" id="naslov" name="naslov" placeholder="Vaš naslov">
   </div>
-  <div class="form-group">
+  <div class="form-group py-3">
     <label for="body">Tijelo članka</label>
     <textarea class="form-control" id="body" name="body" rows="7" placeholder="Tekst članka...."></textarea>
   </div>
