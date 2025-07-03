@@ -1,6 +1,6 @@
 <?php require 'views/partials/head.php' ?>
 
-<form method="POST" action="controllers/articlesCreateController.php" class="p-5 w-75 mx-auto">
+<form method="POST" action="/articles-create" class="p-5 w-75 mx-auto">
   <h2>Unesi novi članak</h2>
   <div class="form-group py-3">
     <label for="naslov">Naslov</label>

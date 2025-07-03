@@ -15,4 +15,5 @@ $router = new Router();
 require 'routes.php';
 
 $currentUri = $_SERVER['REQUEST_URI'];
-$router->route($currentUri);
+$method = $_SERVER['REQUEST_METHOD'];
+$router->route($currentUri, $method);

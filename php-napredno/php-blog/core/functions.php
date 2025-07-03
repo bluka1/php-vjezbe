@@ -9,7 +9,7 @@ function dd($value) {
 
 function view($pathToView, $podaci = []) {
   extract($podaci);
-  require "views/{$pathToView}";
+  require __DIR__ . "/../views/{$pathToView}";
 }
 
 function redirect($path) {

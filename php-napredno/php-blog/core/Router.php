@@ -3,15 +3,35 @@
 class Router {
   private $routes = [];
 
-  public function addRoute(string $path, string $controller) {
-    $this->routes[$path] = $controller;
+  public function addRoute(string $method, string $uri, string $controller) {
+    $this->routes[] = [
+      'uri' => $uri,
+      'controller' => $controller,
+      'method' => $method
+    ];
   }
 
-  public function route(string $currentUri) {
-    if (array_key_exists($currentUri, $this->routes)) {
-      require $this->routes[$currentUri];
-    } else {
-      require 'views/404.view.php';
+  public function get($uri, $controller) {
+    $this->addRoute('GET', $uri, $controller);
+  }
+
+  public function post($uri, $controller) {
+    $this->addRoute('POST', $uri, $controller);
+  }
+  public function delete($uri, $controller) {
+    $this->addRoute('DELETE', $uri, $controller);
+  }
+  public function put($uri, $controller) {
+    $this->addRoute('PUT', $uri, $controller);
+  }
+
+  public function route(string $currentUri, string $method) {
+    foreach($this->routes as $route) {
+      if ($currentUri === $route['uri'] && $method === $route['method']) {
+        return require __DIR__ . "/../controllers/{$route['controller']}";
+      }
     }
+
+    require __DIR__ . '/../views/404.view.php';
   }
 }
