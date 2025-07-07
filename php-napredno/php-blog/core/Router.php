@@ -1,5 +1,7 @@
 <?php
 
+// namespace Core;
+
 class Router {
   private $routes = [];
 
@@ -19,10 +21,10 @@ class Router {
     $this->addRoute('POST', $uri, $controller);
   }
   public function delete($uri, $controller) {
-    $this->addRoute('DELETE', $uri, $controller);
+    $this->addRoute('POST', $uri, $controller);
   }
   public function put($uri, $controller) {
-    $this->addRoute('PUT', $uri, $controller);
+    $this->addRoute('POST', $uri, $controller);
   }
 
   public function route(string $currentUri, string $method) {

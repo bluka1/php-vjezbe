@@ -7,7 +7,7 @@ $articleModel = new Article();
 $naslov = $_POST['naslov'];
 $tijelo = $_POST['body'];
 
-$articleModel->create($naslov, $tijelo);
+$articleModel->create(htmlspecialchars($naslov), htmlspecialchars($tijelo));
 
 // redirect korisnika na sve clanke
 redirect('/articles');

@@ -16,7 +16,7 @@ class Article {
 
   public function getById($id) {
     $stmt = $this->db->prepare("SELECT * FROM clanci WHERE id = :id");
-    $stmt->bindParams(':id', $id);
+    $stmt->bindParam(':id', $id);
     $stmt->execute();
 
     return $stmt->fetch();
@@ -31,5 +31,21 @@ class Article {
     $stmt->execute();
   }
 
-  public function delete() {}
+  public function deleteById(string $id) {
+    $stmt = $this->db->prepare("DELETE FROM clanci WHERE id = :id");
+
+    $stmt->bindParam(':id', $id);
+
+    $stmt->execute();
+  }
+
+  public function updateById(string $id, string $naslov, string $tijelo) {
+    $stmt = $this->db->prepare("UPDATE clanci SET naslov = :naslov, tijelo = :tijelo WHERE id = :id");
+
+    $stmt->bindParam(':id', $id);
+    $stmt->bindParam(':naslov', $naslov);
+    $stmt->bindParam(':tijelo', $tijelo);
+
+    $stmt->execute();
+  }
 }
