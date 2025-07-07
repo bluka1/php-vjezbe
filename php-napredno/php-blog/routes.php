@@ -1,9 +1,9 @@
 <?php
 
-$router->get('/', 'homeController.php');
-$router->get('/articles', 'articles/index.php');
-$router->get('/articles-create', 'articles/create.php');
-$router->post('/articles-create', 'articles/store.php');
-$router->delete('/articles-delete', 'articles/destroy.php');
-$router->get('/articles-edit', 'articles/edit.php');
-$router->post('/articles-store-edited', 'articles/storeEdited.php');
+$router->get('/', 'HomeController', 'index');
+$router->get('/articles', 'ArticlesController', 'index');
+$router->get('/articles-create', 'ArticlesController', 'create');
+$router->post('/articles-create', 'ArticlesController', 'store');
+$router->delete('/articles-delete', 'ArticlesController', 'destroy');
+$router->get('/articles-edit', 'ArticlesController', 'edit');
+$router->post('/articles-store-edited', 'ArticlesController', 'storeEdited');
