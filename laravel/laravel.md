@@ -109,3 +109,168 @@ Analogija: Oni su upute za sastavljanje koje dolaze s novim alatom. Kada u aplik
 OOP veza: Svaki Provider je klasa koja sadrži register() i boot() metode. U register() metodi "vežemo" naš servis za spremnik, a u boot() metodi možemo koristiti već registrirane servise.
 
 Više o samom servisnom spremniku i pružatelju usluga te kako oni funkcioniraju popratite kroz komentare iz primjera.
+
+## Rute - vrata aplikacije
+Rute su jednostavno adrese web aplikacije.
+One govore Laravelu što da učini kada korisnik posjeti određeni URL. Sve web rute definiramo u datoteci `routes/web.php`.
+
+Analogija: datoteka `routes/web.php` je adresar ili telefonski imenik vaše aplikacije. Svaki unos povezuje jedan URL (adresa) s određenom akcijom.
+
+OOP veza - kada pišemo `Route::get(...)`, mi zapravo pozivamo statičku metodu na klasi Route.
+
+Ta klasa je fasada (Facade) što je vrlo čest OOP uzorak. Fasada nam pruža jednostavno, čitljivo sučelje za rad s puno kompleksnijim sustavom koji se nalazi "ispod haube" (u ovom slučaju, moćna Router klasa). Dakle, prisutan je pricnip apstrakcije - ne moramo znati sve kompleksne detalje implementacije, već koristimo jednostavno sučelje.
+
+### Rutiranje i dostupne metode 
+Laravelov ruter podržava sve standardne HTTP metode. Svaka metoda ima svoju svrhu:
+
+`Route::get($uri, $callback);` - koristi se za dohvaćanje podataka. Kada u preglednik upišete adresu, šaljete GET zahtjev
+
+```php
+Route::get('/korisnici', function () {
+    // Logika za prikaz svih korisnika
+});
+```
+
+`Route::post($uri, $callback);` - koristi se za slanje novih podataka na server, najčešće putem HTML forme, kako bi se kreirao novi resurs
+
+```php
+Route::post('/korisnici', function () {
+    // Logika za spremanje novog korisnika u bazu
+});
+```
+
+`Route::put($uri, $callback);` i `Route::patch($uri, $callback);` - koriste se za ažuriranje postojećeg resursa. PUT obično podrazumijeva zamjenu cijelog resursa, dok PATCH podrazumijeva djelomičnu izmjenu
+```php
+Route::put('/korisnici/1', function () {
+    // Logika za ažuriranje korisnika s ID-om 1
+});
+```
+
+`Route::delete($uri, $callback);` - koristi se za brisanje postojećeg resursa
+
+```php
+Route::delete('/korisnici/1', function () {
+    // Logika za brisanje korisnika s ID-om 1
+});
+```
+
+`Route::any($uri, $callback);` - odgovara na bilo koju HTTP metodu
+
+`Route::match(['get', 'post'], $uri, $callback);` - odgovara samo na navedene metode
+
+
+### Parametri
+
+Parametri u rutama mogu biti obvezni i neobavezni (opcionalni).
+
+Često želimo da dio URL-a bude dinamičan. To postižemo parametrima.
+
+#### Obvezni parametri
+Parametar je obavezan dio URL-a. Definiramo ga unutar vitičastih zagrada.
+
+```php
+Route::get('/korisnici/{id}', function ($id) {
+    return 'Prikaz korisnika s ID-om: ' . $id;
+});
+```
+
+Ako pokušate posjetiti `/korisnici` bez ID-a, Laravel će javiti grešku (404 Not Found), jer ruta očekuje taj parametar.
+
+#### Opcionalni parametri
+Ponekad želimo da parametar bude neobavezan. To označavamo dodavanjem upitnika ? nakon imena parametra. U tom slučaju, varijabla u funkciji mora imati zadanu (defaultnu) vrijednost.
+
+```php
+Route::get('/clanci/{kategorija?}', function ($kategorija = 'sve') {
+    return 'Prikaz članaka iz kategorije: ' . $kategorija;
+});
+```
+
+Sada, ako posjetite:
+`/clanci/sport` -> ispisat će se "Prikaz članaka iz kategorije: sport"
+`/clanci` -> ispisat će se "Prikaz članaka iz kategorije: sve"
+
+
+### CSRF zaštita - što je i zašto je važna?
+
+CSRF (Cross-Site Request Forgery) je vrsta napada gdje napadač prevari korisnika da na vašoj stranici izvrši akciju koju nije namjeravao.
+
+Analogija: zamislite da ste prijavljeni u svoju internet banku. Napadač vam pošalje link na sliku mačića. Vi kliknete, ali u pozadini tog linka skriven je zahtjev koji vašoj banci šalje naredbu "prebaci 1000 EUR na napadačev račun". Budući da ste vi prijavljeni, banka misli da ste vi poslali taj zahtjev i izvrši ga.
+
+Kako nas Laravel štiti?
+
+Laravel automatski štiti sve POST, PUT, PATCH i DELETE rute definirane u `routes/web.php`. To radi tako da za svaku korisničku sesiju generira jedinstveni, tajni token.
+
+Kada kreiramo formu u našoj aplikaciji, moramo unutar nje dodati Blade direktivu `@csrf`.
+
+Ova direktiva će u formu dodati skriveno polje s tim tajnim tokenom. Kada se forma pošalje, Laravel provjerava odgovara li poslani token onome koji je pohranjen u sesiji. Ako ne odgovara (kao u slučaju napada), Laravel će blokirati zahtjev. Time smo sigurni da je zahtjev poslan s naše stranice i od strane našeg korisnika.
+
+## Napredno rutiranje - imenovanje, grupiranje i prefiksi
+
+Kako aplikacije rastu, datoteka `routes/web.php` može postati nepregledna, ali postoje tehnike kako bismo je održali čistom, organiziranom i lakom za održavanje.
+
+### Imenovanje ruta (Named Routes)
+Prva i najvažnija tehnika je imenovanje ruta.
+
+Analogija: Zamislite da URL `/korisnici/profil/uredi` ima nadimak "uredi_profil". Puno je lakše pamtiti i koristiti nadimak nego cijelu, dugačku adresu.
+
+Imenujemo rutu dodavanjem metode `->name()` na kraj njene definicije:
+
+```php
+Route::get('/kontaktirajte-nas', function () {
+    // ...
+})->name('kontakt');
+```
+
+Zašto je ovo važno?
+
+Zato što sada u ostatku aplikacije (npr. u linkovima unutar naših pogleda) više ne moramo pisati `<a href="/kontaktirajte-nas">`. Umjesto toga, koristimo globalnu `route()` funkciju: `<a href="{{ route('kontakt') }}">`.
+
+Ako jednog dana odlučimo promijeniti URL iz `/kontaktirajte-nas` u `/kontakt`, jedino mjesto gdje to moramo promijeniti je `routes/web.php`. Svi linkovi generirani pomoću route('kontakt') će se automatski ažurirati. To nam štedi sate posla i sprječava buduće greške.
+
+
+### Grupiranje i prefiksi
+Kada imamo više ruta koje dijele zajedničke karakteristike, grupiramo ih.
+
+Analogija: Zamislite da imate puno dokumenata vezanih za administrativni panel. Nećete ih razbacati po stolu, već ćete ih sve staviti u jedan registrator s natpisom "ADMIN".
+
+#### Prefiksi URL-a (prefix)
+Recimo da sve administratorske rute trebaju počinjati s `/admin`. Umjesto da to pišemo za svaku rutu, koristimo prefix:
+
+```php
+// Bez grupe (ponavljanje)
+Route::get('/admin/dashboard', ...);
+Route::get('/admin/users', ...);
+Route::get('/admin/settings', ...);
+
+// S grupom (čisto i organizirano)
+Route::prefix('admin')->group(function () {
+    Route::get('/dashboard', ...);
+    Route::get('/users', ...);
+    Route::get('/settings', ...);
+});
+```
+
+Rezultirajući URL-ovi su potpuno isti, ali je naš kod puno čišći.
+
+#### Prefiksi imena ruta (name)
+Isto vrijedi i za imena ruta. Možemo dodati zajednički prefiks svim imenima unutar grupe:
+```php
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', ...)->name('dashboard'); // Rezultat: admin.dashboard
+    Route::get('/users', ...)->name('users');       // Rezultat: admin.users
+});
+```
+
+Sada možemo koristiti `route('admin.dashboard')`.
+
+#### Kombiniranje svega gore navedenog
+Moć grupa leži u kombiniranju. Možemo u jednoj grupi definirati zajednički middleware, prefiks URL-a i prefiks imena:
+```php
+Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/users', [UserController::class, 'index'])->name('users');
+});
+```
+
+Što smo ovime dobili?
+- sve rute unutar ove grupe moraju imati korisnika koji je prijavljen (auth), moraju počinjati s `/admin` i njihova imena moraju počinjati s `admin.`
