@@ -39,9 +39,33 @@ Pokretanje servera:
 
 Struktura direktorija:
 - `app/` - središte aplikacije - modeli, kontroleri...
-- `routes/` - "adresar" aplikacije - `web.php` sadrži sve adrese (rute) naše aplikacije
-- `config/` - sve konfiguracijske datoteke
-- `.env` - "sef" za osjetljive podatke poput lozinke za bazu - ovu datoteku nikada ne dijelimo
+    - `Http/Controllers` - kontroleri koji obrađuju zahtjeve
+    - `Models` - klase koje komuniciraju s našom bazom podataka
+    - `Providers` - ovdje registriramo razne servise unutar aplikacije
+- `bootstrap/` - datoteke za "podizanje" (bootstrapping) aplikacije
+- `config/` - sve konfiguracijske datoteke aplikacije
+    - `app.php` - glavna konfiguracija - ime aplikacije, vremenska zona, lokalizacija...
+    - `database.php` - sve konekcije prema bazama podataka (MySQL, PostgreSQL, SQLite...)
+    - `filesystems.php` - konfiguracija za rad s datotekama - ovdje definirate "diskove", npr. lokalni disk (local) ili vanjski servis poput Amazon S3
+    - `services.php` - mjesto za pohranu podataka za spajanje na vanjske servise (npr. API ključevi za Slack, Notion itd.)
+    - *** Važno *** - vrijednosti iz ovih datoteka se najčešće dohvaćaju iz .env datoteke pomoću env() funkcije, kako bi osjetljivi podaci ostali odvojeni od koda
+- `database/` - sve vezano za bazu podataka što nije model.
+    - `migrations` - "kontrola verzija" za bazu - svaka datoteka opisuje jednu promjenu na bazi (kreiranje tablice, dodavanje stupca...)
+    - `seeders` - klase za popunjavanje baze početnim ili testnim podacima
+- `public/` - jedini direktorij dostupan javnosti - sadrži `index.php` (ulaznu točku) i assete (CSS, JS, slike, ikone...)
+- `resources/` - fileovi koji se koriste u aplikaciji
+    - `views` - HTML predlošci (blade datoteke)
+    - `css, js` - CSS i JavaScript kod
+- `routes/` - "adresar" aplikacije
+    - `web.php` - rute za web sučelje - one imaju pristup sesiji i CSRF zaštiti
+    - `console.php` - prostor za definiciju vlastitih artisan naredbi
+- `storage/` - "skladište" za generirane datoteke
+    - `app/public` - ovdje se spremaju datoteke koje generiraju korisnici (npr. avatari) i koje trebaju biti javno dostupne
+    - `framework` - Laravel ovdje sprema svoje interne datoteke (cache, sesije...)
+    - `logs` - ovdje se nalazi laravel.log datoteka gdje se zapisuju sve greške
+- `tests/` - testovi aplikacije
+- `vendor/` - svi vanjski paketi i biblioteke o kojima aplikacija ovisi, uključujući i sam Laravel framework (taj direktorij ne diramo)
+- `.env`: "sef" za osjetljive podatke poput lozinke za bazu - ovu datoteku nikada ne dijelimo
 
 ## Arhitektura - detaljan životni ciklus zahtjeva (Requesta)
 
