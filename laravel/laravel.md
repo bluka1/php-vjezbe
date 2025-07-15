@@ -107,6 +107,3 @@ A kako ta pametna kutija zna sastaviti alate? Tu na scenu stupaju Pružatelji us
 ### Pružatelji usluga
 Analogija: Oni su upute za sastavljanje koje dolaze s novim alatom. Kada u aplikaciju dodamo novu funkcionalnost (servis), mi napišemo i njenog Providera. To je klasa koja "uči" Servisni spremnik kako da taj novi servis izgradi i pripremi.
 OOP veza: Svaki Provider je klasa koja sadrži register() i boot() metode. U register() metodi "vežemo" naš servis za spremnik, a u boot() metodi možemo koristiti već registrirane servise.
-Sada ćemo proći kroz 'Primjer 2' koji imate u materijalima. U njemu ćemo vidjeti kako kreirati jednostavan servis i registrirati ga putem providera. To su moćni alati za pisanje čistog, modularnog i lako testibilnog koda.
-Imate li kakvih pitanja o Servisnom spremniku i Providerima?
-Odlično. Sada kada smo pokrili teoriju, vrijeme je da ovo i primijenite.
