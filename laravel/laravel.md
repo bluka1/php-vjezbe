@@ -84,7 +84,7 @@ Nakon što se autoloader učita, proces se nastavlja. Pratimo putovanje jednog z
 2. Web server (Apache ili Nginx) prima taj zahtjev i, zahvaljujući konfiguraciji, preusmjerava ga na `public/index.php`
 3. učitavanje autoloadera - `index.php` prvo učitava `vendor/autoload.php`
 4. kreiranje instance aplikacije - zatim, `index.php` kreira instancu Laravel aplikacije
-5. to je zapravo instanca servisnog spremnika (Service Container) - o tome nešto kasnije
+5. to je zapravo instanca servisnog spremnika (Service Container)
 6. obrada zahtjeva kroz aplikaciju (bootstrapping) - aplikacija zatim "podiže" (bootstraps) sve temeljne servise (u modernim verzijama Laravela - 11+, ključni dio ovog procesa, uključujući i konfiguraciju middlewarea, definiran je u datoteci `bootstrap/app.php`. Iako više nema datoteke Kernel.php, koncept "kernela" kao srca obrade zahtjeva i dalje postoji unutar samog frameworka)
 7. učitavanje Servisnih Providera (bootstrapping) - aplikacija učitava sve Servisne Providere - oni "podižu" i konfiguriraju sve dijelove frameworka (bazu, rute, validaciju...)
 8. slanje zahtjeva routeru - aplikacija prosljeđuje zahtjev routeru
@@ -96,3 +96,17 @@ Nakon što se autoloader učita, proces se nastavlja. Pratimo putovanje jednog z
 12. povratak odgovora - taj Response objekt putuje natrag kroz lanac middlewarea (u obrnutom redoslijedu) i na kraju ga aplikacija šalje natrag korisnikovom pregledniku, koji ga prikazuje kao web stranicu
 
 Ovo se sve dogodi u milisekundama, ali razumijevanje ovih koraka pomaže nam da znamo gdje i kako intervenirati u proces obrade zahtjeva.
+
+## Servisni spremnik (Service Container) i pružatelji usluga (Service Providers)
+
+### Servisni spremnik
+Analogija: Zamislite ga kao izuzetno pametnu kutiju s alatima. Kada vam treba neki kompleksan alat, npr. "alat za spajanje na bazu podataka", ne morate ga sami sastavljati. Samo kažete kutiji: "Hej, daj mi alat za bazu!" i ona vam ga preda, potpuno sastavljenog i spremnog za upotrebu.
+OOP veza: Ovo je praktična primjena OOP uzoraka Dependency Injection i Inversion of Control. Umjesto da naša klasa sama stvara objekte o kojima ovisi (npr. new DatabaseConnection()), mi tu odgovornost prepuštamo spremniku. On "ubrizgava" ovisnosti umjesto nas.
+A kako ta pametna kutija zna sastaviti alate? Tu na scenu stupaju Pružatelji usluga.
+
+### Pružatelji usluga
+Analogija: Oni su upute za sastavljanje koje dolaze s novim alatom. Kada u aplikaciju dodamo novu funkcionalnost (servis), mi napišemo i njenog Providera. To je klasa koja "uči" Servisni spremnik kako da taj novi servis izgradi i pripremi.
+OOP veza: Svaki Provider je klasa koja sadrži register() i boot() metode. U register() metodi "vežemo" naš servis za spremnik, a u boot() metodi možemo koristiti već registrirane servise.
+Sada ćemo proći kroz 'Primjer 2' koji imate u materijalima. U njemu ćemo vidjeti kako kreirati jednostavan servis i registrirati ga putem providera. To su moćni alati za pisanje čistog, modularnog i lako testibilnog koda.
+Imate li kakvih pitanja o Servisnom spremniku i Providerima?
+Odlično. Sada kada smo pokrili teoriju, vrijeme je da ovo i primijenite.
