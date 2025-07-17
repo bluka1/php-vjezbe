@@ -22,4 +22,12 @@ class RouteController extends Controller
   public function getNeoParams(string $neobavezniParametar = '') {
     return "Neobavezni parametar: {$neobavezniParametar}";
   }
+
+  public function getNova() {
+    return view('getNova');
+  }
+
+  public function postNova() {
+    return 'POST Nova uspješno napravljen.';
+  }
 }

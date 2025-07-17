@@ -32,3 +32,8 @@ Route::get('/neoparam/{neobavezniParametar?}', [RouteController::class, 'getNeoP
 // napraviti novi view koji će se vraćati za get request i radit će post request na istu rutu
 // post request može vratiti samo neki string
 // get request mora vratiti view s formom
+
+Route::prefix('/abc')->name('abc.')->group(function () {
+  Route::get('/nova', [RouteController::class, 'getNova'])->name('get');
+  Route::post('/nova', [RouteController::class, 'postNova'])->name('post');
+});
