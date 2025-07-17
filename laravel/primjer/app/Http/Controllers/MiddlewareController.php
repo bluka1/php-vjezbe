@@ -11,4 +11,8 @@ class MiddlewareController extends Controller
   public function get() {
     return 'MIDDLE ROUTE';
   }
+
+  public function check() {
+    return 'CHECKING AGE';
+  }
 }

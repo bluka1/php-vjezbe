@@ -42,3 +42,8 @@ Route::prefix('/abc')->name('abc.')->group(function () {
 
 // vjezbe middlewarea
 Route::get('/middle', [MiddlewareController::class, 'get'])->middleware('is.authenticated');
+
+// zadatak
+// napraviti middleware CheckAge koji će iz inputa provjeravati userove godine
+// dovoljno je staviti u link ?age=nekiBroj kod otvaranja rute
+Route::get('/age', [MiddlewareController::class, 'check'])->middleware('check.age');

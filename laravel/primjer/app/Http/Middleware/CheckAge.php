@@ -15,6 +15,9 @@ class CheckAge
      */
     public function handle(Request $request, Closure $next): Response
     {
-        return $next($request);
+      if ($request->input('age') < 18) {
+        abort(403);
+      }
+      return $next($request);
     }
 }
