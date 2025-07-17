@@ -274,3 +274,86 @@ Route::middleware('auth')->prefix('admin')->name('admin.')->group(function () {
 
 Što smo ovime dobili?
 - sve rute unutar ove grupe moraju imati korisnika koji je prijavljen (auth), moraju počinjati s `/admin` i njihova imena moraju počinjati s `admin.`
+
+## Middleware - "čuvari" aplikacije
+
+### Uloga middlewarea
+Middleware je mehanizam za filtriranje i izvršavanje koda prije ili nakon što HTTP zahtjev stigne do svoje konačne destinacije - kontrolera.
+
+Analogija: Zamislite ga kao niz kontrolnih točaka na putu do trezora banke.
+1. Prvi zaštitar provjerava imate li uopće karticu za ulaz
+2. Drugi provjerava jeste li klijent banke (npr. je li korisnik prijavljen - auth middleware)
+3. Treći provjerava imate li dozvolu za ulazak u taj specifični sef (npr. je li korisnik administrator - admin middleware)
+
+Tek ako prođete sve točke, stižete do trezora (kontrolera).
+
+OOP veza - svaki middleware je PHP klasa koja implementira handle metodu i to je savršen primjer OOP uzorka chain of responsibility (lanac odgovornosti), gdje zahtjev putuje kroz lanac objekata (middlewarea).
+
+### Kreiranje i registracija novog middlewarea
+
+1. kreiranje (artisan naredbom)
+- ako želimo stvoriti middleware po imenu CheckAge, stvaramo ga naredbom `php artisan make:middleware CheckAge`
+- ova naredba kreira datoteku `app/Http/Middleware/CheckAge.php` i unutar nje, ključna je handle metoda:
+```php
+public function handle(Request $request, Closure $next): Response
+{
+    // Logika koja se izvršava PRIJE kontrolera
+    if ($request->input('age') < 18) {
+      // input() je globalna funkcija koja čita parametre iz URL-a (GET request)
+      // ako ne nade tamo, provjerava polja vezana uz POST request (npr. input fieldove)
+        return redirect('home'); // Ako uvjet nije zadovoljen, preusmjeri i zaustavi
+    }
+
+    // Proslijedi zahtjev sljedećem middlewareu ili kontroleru
+    return $next($request);
+}
+```
+
+2. registracija (u `bootstrap/app.php`)
+- da bi Laravel znao za naš novi middleware, moramo mu dati nadimak (alias)
+- u `bootstrap/app.php` i unutar `.withMiddleware()` metode, dodamo alias:
+```php
+->withMiddleware(function (Middleware $middleware) {
+    $middleware->alias([
+        'check.age' => \App\Http\Middleware\CheckAge::class,
+    ]);
+})
+```
+- sada smo CheckAge klasi dali nadimak check.age
+
+### Grupiranje i atributi
+#### Grupiranje middlewarea
+Često želimo primijeniti isti set middlewarea na više ruta. Umjesto da ih pišemo na svakoj ruti, grupiramo ih:
+```php
+Route::middleware(['auth', 'check.age'])->group(function () {
+    Route::get('/dashboard', ...);
+    Route::get('/profile', ...);
+});
+```
+- ovaj kod označava da za pristup dashboardu i profilu korisnik mora biti prijavljen (auth) i stariji od 18 godina (check.age)
+
+
+#### Atributi (parametri) u middlewareu
+Ponekad želimo da se naš middleware ponaša drugačije ovisno o situaciji. Za takve potrebe možemo mu proslijediti parametre.
+
+Npr. želimo middleware koji provjerava ima li korisnik određenu ulogu (role)
+```php
+// CheckRole.php
+public function handle(Request $request, Closure $next, string $role): Response
+{
+    if (! $request->user()->hasRole($role)) {
+        // Preusmjeri ako korisnik nema traženu ulogu
+        abort(403);
+    }
+
+    return $next($request);
+}
+```
+
+- sada kod primjene middlewarea na rutu, dodajemo parametar nakon dvotočke:
+```php
+Route::get('/admin/posts/create', ...)
+    ->middleware('role:editor');
+```
+
+- ovim govorimo: dopusti pristup ovoj ruti samo ako korisnik ima ulogu 'editor'
