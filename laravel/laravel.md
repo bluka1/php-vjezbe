@@ -299,7 +299,7 @@ public function handle(Request $request, Closure $next): Response
 {
     // Logika koja se izvršava PRIJE kontrolera
     if ($request->input('age') < 18) {
-      // input() je globalna funkcija koja čita parametre iz URL-a (GET request)
+      // input() je metoda na request objektu koja čita parametre iz URL-a (GET request)
       // ako ne nade tamo, provjerava polja vezana uz POST request (npr. input fieldove)
         return redirect('home'); // Ako uvjet nije zadovoljen, preusmjeri i zaustavi
     }
@@ -321,8 +321,8 @@ public function handle(Request $request, Closure $next): Response
 ```
 - sada smo CheckAge klasi dali nadimak check.age
 
-### Grupiranje i atributi
-#### Grupiranje middlewarea
+### Grupiranje(primjena na grupu ruta) i atributi
+#### Primjena middlewarea na grupu ruta
 Često želimo primijeniti isti set middlewarea na više ruta. Umjesto da ih pišemo na svakoj ruti, grupiramo ih:
 ```php
 Route::middleware(['auth', 'check.age'])->group(function () {

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\HelloWorldController;
+use App\Http\Controllers\MiddlewareController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\RouteController;
 use Illuminate\Support\Facades\Route;
@@ -37,3 +38,7 @@ Route::prefix('/abc')->name('abc.')->group(function () {
   Route::get('/nova', [RouteController::class, 'getNova'])->name('get');
   Route::post('/nova', [RouteController::class, 'postNova'])->name('post');
 });
+
+
+// vjezbe middlewarea
+Route::get('/middle', [MiddlewareController::class, 'get'])->middleware('is.authenticated');
