@@ -528,3 +528,168 @@ Alternativno, mogli smo postići isto s metodom `only()`:
 - `$this->middleware('auth')->only(['create', 'store', 'edit', 'update', 'destroy']);`
 
 Ovo je izuzetno moćan i čist način za definiranje pravila pristupa unutar same klase koja je za njih zadužena.
+
+## HTTP Zahtjevi
+Iz HTTP zahtjeva možemo izvlačiti informacije, a za to se moramo upoznati s Laravelovim Request objektom.
+
+### HTTP Zahtjev (Request)
+Svaki put kad korisnik posjeti stranicu ili pošalje formu, njegov preglednik šalje HTTP zahtjev našem serveru. Taj zahtjev sadrži hrpu korisnih informacija.
+
+Analogija: Zamislite da naručujete pizzu telefonom. Vaša narudžba (zahtjev) nije samo "dajte mi pizzu". Ona sadrži:
+- URL - koju pizzeriju zovete (/pizzerija/narudzba)
+- metoda - što želite učiniti (GET - pitati za meni, POST - naručiti novu pizzu)
+- zaglavlja (headers) - tko zove (vaš broj telefona - vrsta preglednika)
+- tijelo (body) / parametri - detalji narudžbe ("jedna velika capricciosa, bez gljiva" - `?velicina=velika&vrsta=capricciosa`)
+
+OOP veza: Laravel sve te informacije lijepo zapakira u jedan objekt klase `Illuminate\Http\Request`. Ovo je savršen primjer enkapsulacije. Umjesto da lovimo podatke iz globalnih PHP varijabli poput $_GET i $_POST, mi radimo s čistim i moćnim objektom koji dobivamo putem Dependency Injectiona u našim metodama kontrolera.
+
+### Slanje i dohvaćanje podataka putem GET metode
+GET metoda šalje podatke kao dio URL-a, u tzv. query stringu. To je sve ono što dolazi nakon ? u URL-u. Ovo je idealno za stvari poput pretrage, filtriranja ili paginacije.
+
+Primjer: Recimo da imamo stranicu za pretragu proizvoda. Korisnik može upisati pojam za pretragu i odabrati sortiranje. URL bi mogao izgledati ovako:
+`/pretraga?pojam=laptop&sortiraj=cijeni_rastuce`
+
+Dohvaćanje tih podataka u kontroleru:
+1. Ruta (`routes/web.php`):
+- definiramo jednostavnu rutu koja vodi na naš kontroler.
+```php
+use App\Http\Controllers\SearchController;
+
+Route::get('/pretraga', [SearchController::class, 'index']);
+```
+
+2. Kontroler (`SearchController.php`):
+- kreiramo kontroler i unutar index metode, zatražimo Request objekt (kroz DI - Dependency Injection)
+```php
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class SearchController extends Controller
+{
+    public function index(Request $request)
+    {
+        // dohvaćanje jednog parametra iz query stringa
+        $pojam = $request->query('pojam');
+
+        // dohvaćanje drugog parametra
+        // ako ne postoji, koristit će se zadana vrijednost 'naziv'
+        $sortirajPo = $request->query('sortiraj', 'naziv');
+
+        // metoda input() radi isto i za GET i za POST, pa je često praktičnija
+        // $pojam = $request->input('pojam');
+        // $sortirajPo = $request->input('sortiraj', 'naziv');
+
+        // provjera postoji li parametar
+        if ($request->has('pojam')) {
+            return "Rezultati pretrage za pojam '{$pojam}', sortirano po: {$sortirajPo}";
+        }
+
+        return "Molimo unesite pojam za pretragu";
+    }
+}
+```
+
+Sada, ako posjetimo `/pretraga?pojam=monitor&sortiraj=cijeni_padajuce`, rezultat će biti:
+- "Rezultati pretrage za pojam 'monitor', sortirano po: cijeni_padajuce."
+
+Za `/pretraga?pojam=tipkovnica`, rezultat će biti:
+- "Rezultati pretrage za pojam 'tipkovnica', sortirano po: naziv."
+
+Za `/pretraga`, rezultat će biti: 
+- "Molimo unesite pojam za pretragu."
+
+### Slanje podataka (POST) i datoteke
+
+#### Slanje i dohvaćanje podataka putem POST metode
+Za razliku od GET metode gdje su podaci vidljivi u URL-u, POST metoda šalje podatke u "tijelu" (body) HTTP zahtjeva. Ovo je sigurniji i prikladniji način za slanje osjetljivih informacija ili veće količine podataka.
+
+Analogija: Ako je GET zahtjev poštanski papirić na kojemu svi mogu pročitati sadržaj, POST zahtjev je zatvoreno pismo. Sadržaj je skriven od pogleda dok ne stigne na odredište.
+
+- kreiranje zahtjeva:
+1. Rute (`routes/web.php`)
+- potrebne su nam dvije rute - jedna GET ruta da prikaže formu i jedna POST ruta da obradi poslane podatke
+```php
+use App\Http\Controllers\ContactController;
+
+// prikazuje kontaktnu formu
+Route::get('/contact', [ContactController::class, 'create']);
+
+// obrađuje podatke poslane iz forme
+Route::post('/contact', [ContactController::class, 'store']);
+```
+
+2. Kontroler (`ContactController.php`):
+- metoda create će vratiti pogled (view), a store će obraditi podatke
+```php
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class ContactController extends Controller
+{
+    public function create()
+    {
+        // vraća HTML pogled s formom (npr. resources/views/contact.blade.php)
+        return view('contact');
+    }
+
+    public function store(Request $request)
+    {
+        // dohvaćanje podataka iz POST zahtjeva
+        $ime = $request->input('name');
+        $poruka = $request->input('message');
+
+        // ovdje bi išla logika za spremanje u bazu ili slanje e-maila...
+
+        return "Hvala, {$ime}! Vaša poruka je primljena. Kontaktirat ćemo Vas u najkraćem mogućem roku.";
+    }
+}
+```
+
+Metoda `$request->input('ime_polja')` je univerzalna i dohvaća podatke i iz GET i iz POST zahtjeva.
+
+#### Dohvat poslanih datoteka (file uploads)
+Slanje datoteka je specifičan slučaj POST zahtjeva. Forma mora imati `enctype="multipart/form-data"` atribut.
+
+Analogija: Obično pismo (POST) može sadržavati samo tekst. Ako želite poslati paket (kutiju tj. datoteku), morate koristiti posebnu uslugu (`multipart/form-data`) koja zna kako rukovati s kutijama.
+
+Primjer - forma za upload profilne slike
+1. forma (unutar pogleda)
+```html
+<form action="/profile" method="POST" enctype="multipart/form-data">
+    @csrf
+    <input type="file" name="avatar">
+    <button type="submit">Upload</button>
+</form>
+```
+
+2. kontroler
+- u kontroleru, datotekama ne pristupamo putem `input()`, već putem `file()` metode
+```php
+public function update(Request $request)
+{
+    // provjera je li datoteka poslana i je li ispravna
+    if ($request->hasFile('avatar') && $request->file('avatar')->isValid()) {
+
+        // dohvaćanje objekta datoteke
+        $file = $request->file('avatar');
+
+        // dohvaćanje originalnog imena datoteke
+        $originalName = $file->getClientOriginalName();
+
+        // spremanje datoteke na disk
+        // 'avatars' je poddirektorij unutar storage/app/public
+        $path = $file->store('avatars', 'public');
+
+        return "Datoteka '{$originalName}' je uspješno spremljena na putanju: {$path}";
+    }
+
+    return "Nije poslana ispravna datoteka.";
+}
+```
+
+- Važno - da bi datoteke spremljene u `storage/app/public` bile dostupne javnosti, potrebno je jednom pokrenuti artisan naredbu:
+    - `php artisan storage:link`
+
+Ona kreira simboličku vezu iz `public/storage` u `storage/app/public`.
