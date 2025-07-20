@@ -357,3 +357,174 @@ Route::get('/admin/posts/create', ...)
 ```
 
 - ovim govorimo: dopusti pristup ovoj ruti samo ako korisnik ima ulogu 'editor'
+
+### Pridruživanje middlewarea rutama
+Recimo da postoji `EnsureUserIsAdmin` middleware s aliasom `is.admin` i da naša aplikacija "zna" da postoji taj middleware, tada ga možemo početi koristiti. On se pridružuje rutama da bismo zaštitili određene dijelove naše aplikacije.
+
+Analogija: Sada kada smo zaposlili zaštitara (`is.admin`), moramo mu reći koja vrata treba čuvati.
+
+#### Pridruživanje jednoj ruti
+Najjednostavniji način je dodati metodu `->middleware()` na kraj definicije rute:
+```php
+Route::get('/admin/dashboard', function () {
+    return 'Dobrodošli na administratorsku ploču!';
+})->middleware('is.admin');
+```
+
+Sada, prije nego što se izvrši funkcija i prikaže poruka, Laravel će prvo pokrenuti naš `EnsureUserIsAdmin` middleware.
+
+### Pridruživanje grupi ruta
+Puno češće ćemo htjeti zaštititi cijeli set ruta. Umjesto da dodajemo middleware na svaku pojedinačno, primijenit ćemo ga na cijelu grupu. To je čišće i efikasnije.
+
+```php
+Route::middleware('is.admin')->group(function () {
+
+    Route::get('/admin/dashboard', function () {
+        return 'Administratorska ploča';
+    });
+
+    Route::get('/admin/users', function () {
+        return 'Popis svih korisnika';
+    });
+
+});
+```
+
+Ovdje označavamo - sve rute definirane unutar ove grupe moraju proći provjeru `is.admin` middlewarea
+Ovo je preferirani način za zaštitu cijelih sekcija aplikacije, poput kompletnog administratorskog sučelja.
+
+
+## Kontroleri - "Menadžeri" vaše aplikacije
+Analogija: Ako je Router recepcioner koji usmjerava pozive, Kontroler je menadžer odjela. Recepcioner ne rješava problem sam; on samo spoji klijenta s pravim menadžerom. Menadžer (Kontroler) zatim preuzima, organizira posao (dohvaća podatke od Modela) i na kraju delegira prezentaciju (šalje podatke View-u).
+
+Svrha: Kontroleri su ključni dio MVC (Model-View-Controller) arhitekture. Njihova svrha je da grupiraju logiku vezanu za određeni dio aplikacije. Na primjer, PostController će imati svu logiku za rad s člancima.
+
+OOP veza: Kontroler je jednostavno PHP klasa. Svaka javna metoda unutar te klase je akcija koju ruta može pozvati. Ovo je savršen primjer principa enkapsulacije – grupiranje srodnih funkcionalnosti na jedno mjesto.
+
+### Definiranje kontrolera i povezivanje s rutama
+1. Kreiranje kontrolera
+`php artisan make:controller PostController`
+
+Ovo kreira datoteku `app/Http/Controllers/PostController.php`. Unutar nje, dodajemo metode:
+
+```php
+namespace App\Http\Controllers;
+
+class PostController extends Controller
+{
+    public function index()
+    {
+        return 'Prikaz svih članaka';
+    }
+
+    public function show(string $id)
+    {
+        return 'Prikaz članka s ID-om: ' . $id;
+    }
+}
+```
+
+2. Povezivanje ruta s kontrolerom
+Sada u `routes/web.php`, umjesto funkcije, prosljeđujemo polje koje sadrži klasu kontrolera i ime metode kao string:
+```php
+use App\Http\Controllers\PostController;
+
+Route::get('/posts', [PostController::class, 'index']);
+Route::get('/posts/{id}', [PostController::class, 'show']);
+```
+
+Ovo je puno čišće i organiziranije.
+
+### Dependency Injection(DI) u kontrolerima
+Dependency Injection (DI) je koncept pristuan u mnogim frameworcima i u drugim jezicima. To je koncept gdje se ovisnosti (drugi objekti koji su klasi potrebni) "ubrizgavaju" tj. "injectaju" u nju, umjesto da ih klasa sama stvara.
+
+Analogija: Zamislite kuhara (kontroler) kojem ne trebaju samo recepti (metode), već i sastojci (ovisnosti). Umjesto da kuhar sam ide u dućan po sastojke (npr. `new Request()`), dostavljač (Laravelov Service Container) mu ih donese direktno na radnu površinu (kao argumente metode).
+
+Laravel ovo radi automatski za nas. Ako u metodi kontrolera zatražimo određenu klasu (npr. `Illuminate\Http\Request`), Laravel će nam automatski stvoriti i proslijediti njen objekt.
+
+```php
+use Illuminate\Http\Request;
+
+public function store(Request $request)
+{
+    // ne moramo pisati $request = new Request();
+    // Laravel nam ga je automatski "ubrizgao"
+
+    $title = $request->input('title');
+    // ... logika za spremanje ...
+}
+```
+
+### Resursni kontroleri (Resource Controllers)
+Često za neki resurs (poput članaka, korisnika, proizvoda) trebamo isti set akcija: prikaz svih, prikaz jednog, forma za kreiranje, spremanje, forma za uređivanje, ažuriranje i brisanje. Ovo se zove `CRUD` (Create, Read, Update, Delete).
+
+Da ne bismo ručno pisali 7 ruta i 7 metoda svaki put, Laravel nudi prečac.
+
+1. Kreiranje resursnog kontrolera:
+Dodajemo --resource zastavicu na artisan naredbu:
+`php artisan make:controller ProductController --resource`
+
+Ovo će kreirati kontroler sa svim potrebnim, već definiranim praznim metodama (index, create, store, show, edit, update, destroy).
+
+2. Definiranje resursne rute:
+U `routes/web.php`, jedna linija koda zamjenjuje sedam:
+`Route::resource('products', ProductController::class);`
+
+Ova jedna linija automatski kreira sve potrebne GET, POST, PUT/PATCH i DELETE rute i povezuje ih s odgovarajućim metodama na ProductControlleru. To je ogromna ušteda vremena.
+
+### Pridruživanje middlewarea kontroleru
+Osim toga što middleware možemo dodijeliti rutama, postoji još elegantnija opcija, a to je da ga dodijelimo kontroleru.
+
+Prednosti tog pristupa:
+- enkapsulacija logike - pravila koja se odnose na kontroler pripadaju tom kontroleru, a datoteka s rutama ostaje čista i bavi se samo definiranjem adresa
+- preciznija kontrola - možemo reći da se neki middleware primijeni na sve metode u kontroleru osim na neke, ili samo na određene metode
+    - to radimo unutar `__construct` metode (konstruktora) kontrolera
+
+OOP veza: konstruktor je, kao što znamo, posebna metoda koja se izvršava čim se objekt (u ovom slučaju, kontroler) kreira. To je savršeno mjesto za postavljanje "pravila" (middlewarea) koja će vrijediti za taj objekt i sve njegove metode.
+
+Recimo da postoji PostController. Želimo da svi mogu vidjeti popis članaka (index) i jedan članak (show), ali samo prijavljeni korisnici mogu kreirati, uređivati i brisati članke.
+
+```php
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class PostController extends Controller
+{
+    public function __construct()
+    {
+        // primijeni 'auth' middleware na SVE metode OSIM 'index' i 'show'
+        $this->middleware('auth')->except(['index', 'show']);
+    }
+
+    public function index()
+    {
+        return 'Svi mogu vidjeti popis članaka';
+    }
+
+    public function show(string $id)
+    {
+        return 'Svi mogu vidjeti članak ' . $id;
+    }
+
+    public function create()
+    {
+        return 'Samo prijavljeni korisnici mogu vidjeti ovu formu';
+    }
+
+    public function store(Request $request)
+    {
+        // samo prijavljeni korisnici mogu spremiti članak
+    }
+
+    // ... edit, update, destroy mogu koristiti samo prijavljeni korisnici
+}
+```
+
+Analogija:
+Ovime smo rekli: "Angažiraj zaštitara (auth) da čuva sva vrata ovog odjela (PostController), osim glavnog ulaza (index) i izložbenog prostora (show), koji su otvoreni za javnost."
+
+Alternativno, mogli smo postići isto s metodom `only()`:
+- `$this->middleware('auth')->only(['create', 'store', 'edit', 'update', 'destroy']);`
+
+Ovo je izuzetno moćan i čist način za definiranje pravila pristupa unutar same klase koja je za njih zadužena.
