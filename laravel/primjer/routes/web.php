@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BookController;
 use App\Http\Controllers\HelloWorldController;
 use App\Http\Controllers\MiddlewareController;
 use App\Http\Controllers\OrderController;
@@ -53,3 +54,9 @@ Route::middleware('check.age')->prefix('/abc')->name('abc.')->group(function () 
   Route::get('/nova', [RouteController::class, 'getNova'])->name('get');
   Route::post('/nova', [RouteController::class, 'postNova'])->name('post');
 });
+
+// implementacija resursnog kontrolera
+Route::resource('books', BookController::class);
+
+// zadatak
+// napraviti novi resursni kontroler za resurs article
