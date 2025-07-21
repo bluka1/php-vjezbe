@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\HelloWorldController;
 use App\Http\Controllers\MiddlewareController;
@@ -60,3 +61,4 @@ Route::resource('books', BookController::class);
 
 // zadatak
 // napraviti novi resursni kontroler za resurs article
+Route::resource('articles', ArticleController::class);
