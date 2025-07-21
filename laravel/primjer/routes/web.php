@@ -34,10 +34,10 @@ Route::get('/neoparam/{neobavezniParametar?}', [RouteController::class, 'getNeoP
 // post request može vratiti samo neki string
 // get request mora vratiti view s formom
 
-Route::prefix('/abc')->name('abc.')->group(function () {
-  Route::get('/nova', [RouteController::class, 'getNova'])->name('get');
-  Route::post('/nova', [RouteController::class, 'postNova'])->name('post');
-});
+// Route::prefix('/abc')->name('abc.')->group(function () {
+//   Route::get('/nova', [RouteController::class, 'getNova'])->name('get');
+//   Route::post('/nova', [RouteController::class, 'postNova'])->name('post');
+// });
 
 
 // vjezbe middlewarea
@@ -47,3 +47,9 @@ Route::get('/middle', [MiddlewareController::class, 'get'])->middleware('is.auth
 // napraviti middleware CheckAge koji će iz inputa provjeravati userove godine
 // dovoljno je staviti u link ?age=nekiBroj kod otvaranja rute
 Route::get('/age', [MiddlewareController::class, 'check'])->middleware('check.age');
+
+// implementacija middlewarea na grupu ruta
+Route::middleware('check.age')->prefix('/abc')->name('abc.')->group(function () {
+  Route::get('/nova', [RouteController::class, 'getNova'])->name('get');
+  Route::post('/nova', [RouteController::class, 'postNova'])->name('post');
+});

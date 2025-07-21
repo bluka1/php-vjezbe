@@ -322,17 +322,6 @@ public function handle(Request $request, Closure $next): Response
 - sada smo CheckAge klasi dali nadimak check.age
 
 ### Grupiranje(primjena na grupu ruta) i atributi
-#### Primjena middlewarea na grupu ruta
-Često želimo primijeniti isti set middlewarea na više ruta. Umjesto da ih pišemo na svakoj ruti, grupiramo ih:
-```php
-Route::middleware(['auth', 'check.age'])->group(function () {
-    Route::get('/dashboard', ...);
-    Route::get('/profile', ...);
-});
-```
-- ovaj kod označava da za pristup dashboardu i profilu korisnik mora biti prijavljen (auth) i stariji od 18 godina (check.age)
-
-
 #### Atributi (parametri) u middlewareu
 Ponekad želimo da se naš middleware ponaša drugačije ovisno o situaciji. Za takve potrebe možemo mu proslijediti parametre.
 
@@ -378,21 +367,17 @@ Puno češće ćemo htjeti zaštititi cijeli set ruta. Umjesto da dodajemo middl
 
 ```php
 Route::middleware('is.admin')->group(function () {
-
     Route::get('/admin/dashboard', function () {
         return 'Administratorska ploča';
     });
-
     Route::get('/admin/users', function () {
         return 'Popis svih korisnika';
     });
-
 });
 ```
 
-Ovdje označavamo - sve rute definirane unutar ove grupe moraju proći provjeru `is.admin` middlewarea
+Ovdje označavamo - sve rute definirane unutar ove grupe moraju proći provjeru `is.admin` middlewarea.
 Ovo je preferirani način za zaštitu cijelih sekcija aplikacije, poput kompletnog administratorskog sučelja.
-
 
 ## Kontroleri - "Menadžeri" vaše aplikacije
 Analogija: Ako je Router recepcioner koji usmjerava pozive, Kontroler je menadžer odjela. Recepcioner ne rješava problem sam; on samo spoji klijenta s pravim menadžerom. Menadžer (Kontroler) zatim preuzima, organizira posao (dohvaća podatke od Modela) i na kraju delegira prezentaciju (šalje podatke View-u).
@@ -436,7 +421,7 @@ Route::get('/posts/{id}', [PostController::class, 'show']);
 Ovo je puno čišće i organiziranije.
 
 ### Dependency Injection(DI) u kontrolerima
-Dependency Injection (DI) je koncept pristuan u mnogim frameworcima i u drugim jezicima. To je koncept gdje se ovisnosti (drugi objekti koji su klasi potrebni) "ubrizgavaju" tj. "injectaju" u nju, umjesto da ih klasa sama stvara.
+Dependency Injection (DI) je koncept prisutan u mnogim frameworcima i u drugim jezicima. To je koncept gdje se ovisnosti (drugi objekti koji su klasi potrebni) "ubrizgavaju" tj. "injectaju" u nju, umjesto da ih klasa sama stvara.
 
 Analogija: Zamislite kuhara (kontroler) kojem ne trebaju samo recepti (metode), već i sastojci (ovisnosti). Umjesto da kuhar sam ide u dućan po sastojke (npr. `new Request()`), dostavljač (Laravelov Service Container) mu ih donese direktno na radnu površinu (kao argumente metode).
 
