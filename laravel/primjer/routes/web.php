@@ -4,9 +4,11 @@ use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\BookController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\HelloWorldController;
+use App\Http\Controllers\KnjigeController;
 use App\Http\Controllers\KorisniciController;
 use App\Http\Controllers\MiddlewareController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -89,3 +91,15 @@ Route::post('/customers/store', [CustomerController::class, 'store']);
 // povezati get rutu s index metodom i unutar nje prikazati view
 // povezati post rutu sa store metodom
 // u viewu mora biti forma koja radi POST request i usmjerava na store metodu
+Route::get('/knjige', [KnjigeController::class, 'index']);
+Route::post('/knjige/store', [KnjigeController::class, 'store']);
+
+// HTTP upload datoteka
+Route::get('/profile/upload', [ProfileController::class, 'create']);
+Route::post('/profile/store', [ProfileController::class, 'store']);
+
+// zadatak
+// napraviti SlikeController
+// napraviti rutu za get i za post metodu
+// ruta za get metodu vraćat će samo view koji će pokrenuti upload slike
+// ruta za post metodu mora prikazati lokaciju uploadane slike i originalno ime datoteke
