@@ -10,6 +10,7 @@ use App\Http\Controllers\MiddlewareController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RouteController;
+use App\Http\Controllers\SlikeController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -103,3 +104,5 @@ Route::post('/profile/store', [ProfileController::class, 'store']);
 // napraviti rutu za get i za post metodu
 // ruta za get metodu vraćat će samo view koji će pokrenuti upload slike
 // ruta za post metodu mora prikazati lokaciju uploadane slike i originalno ime datoteke
+Route::get('/slike/upload', [SlikeController::class, 'create']);
+Route::post('/slike/store', [SlikeController::class, 'store']);
