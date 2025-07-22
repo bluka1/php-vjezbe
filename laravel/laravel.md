@@ -526,7 +526,7 @@ Analogija: Zamislite da naručujete pizzu telefonom. Vaša narudžba (zahtjev) n
 - zaglavlja (headers) - tko zove (vaš broj telefona - vrsta preglednika)
 - tijelo (body) / parametri - detalji narudžbe ("jedna velika capricciosa, bez gljiva" - `?velicina=velika&vrsta=capricciosa`)
 
-OOP veza: Laravel sve te informacije lijepo zapakira u jedan objekt klase `Illuminate\Http\Request`. Ovo je savršen primjer enkapsulacije. Umjesto da lovimo podatke iz globalnih PHP varijabli poput $_GET i $_POST, mi radimo s čistim i moćnim objektom koji dobivamo putem Dependency Injectiona u našim metodama kontrolera.
+OOP veza: Laravel sve te informacije lijepo zapakira u jedan objekt klase `Illuminate\Http\Request`. Ovo je savršen primjer enkapsulacije. Umjesto da lovimo podatke iz globalnih PHP varijabli poput `$_GET` i `$_POST`, mi radimo s čistim i moćnim objektom koji dobivamo putem Dependency Injectiona u našim metodama kontrolera.
 
 ### Slanje i dohvaćanje podataka putem GET metode
 GET metoda šalje podatke kao dio URL-a, u tzv. query stringu. To je sve ono što dolazi nakon ? u URL-u. Ovo je idealno za stvari poput pretrage, filtriranja ili paginacije.
