@@ -2,11 +2,13 @@
 
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\BookController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\HelloWorldController;
 use App\Http\Controllers\KorisniciController;
 use App\Http\Controllers\MiddlewareController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\RouteController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -68,3 +70,22 @@ Route::resource('articles', ArticleController::class);
 // napraviti novi resursni kontroler za resurs Korisnici]
 // dodati middleware check.age za metode show i create
 Route::resource('korisnici', KorisniciController::class);
+
+// HTTP zahtjevi
+// GET zahtjevi
+Route::get('/users', [UserController::class, 'index']);
+
+// zadatak
+// napraviti CustomerController, dodati index rutu i prikazati 3 parametra po izboru
+// parametri moraju biti proslijedeni unutar URL-a i odvojeni znakon &
+Route::get('/customers', [CustomerController::class, 'index']);
+
+// HTTP POST zahtjevi
+Route::get('/customers/create', [CustomerController::class, 'create']);
+Route::post('/customers/store', [CustomerController::class, 'store']);
+
+// zadatak
+// napraviti novi KnjigeController
+// povezati get rutu s index metodom i unutar nje prikazati view
+// povezati post rutu sa store metodom
+// u viewu mora biti forma koja radi POST request i usmjerava na store metodu
