@@ -8,6 +8,7 @@ use App\Http\Controllers\KnjigeController;
 use App\Http\Controllers\KorisniciController;
 use App\Http\Controllers\MiddlewareController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\SlikeController;
@@ -111,3 +112,13 @@ Route::post('/slike/store', [SlikeController::class, 'store']);
 // u BookController u store metodi dodati validaciju za polje naslov
 // dovoljno je 2 pravila
 // validacijske greške i stari unos prikazati na ekranu
+
+// zadatak - FormRequest
+// napraviti novi controller - PostController
+// dodati get i post rutu
+// dodati create i store metode
+// dodati view za create metodu
+// implementirati FormRequest validaciju za naslov i tijelo polja
+
+Route::get('/posts/create', [PostController::class, 'create']);
+Route::post('/posts/store', [PostController::class, 'store']);
