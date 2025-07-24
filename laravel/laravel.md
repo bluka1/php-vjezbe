@@ -678,3 +678,276 @@ public function update(Request $request)
     - `php artisan storage:link`
 
 Ona kreira simboličku vezu iz `public/storage` u `storage/app/public`.
+
+
+## Validacija podataka
+Kad god primamo korisnikove podatke, moramo provjeriti jesu li ti podaci ispravni i sigurni. Radi toga uvodimo koncept validacije.
+Nikada, ali baš nikada, ne smijemo vjerovati podacima koje dobijemo od korisnika. 
+Validacija je proces provjere jesu li ti podaci u formatu koji vaša aplikacija očekuje.
+
+Analogija: 
+Zamislite da ste izbacivač u noćnom klubu (vaš kontroler). Nećete pustiti bilo koga unutra. Prvo provjeravate osobnu iskaznicu (validirate podatke). Je li osoba punoljetna (min number input)? Postoji li uopće ime na osobnoj (required input)? Je li osobna ispravna (validan ID)? 
+Zatim, tek ako su svi uvjeti zadovoljeni, puštate osobu unutra (u metodu kontrolera).
+
+OOP veza:
+Kada pozovemo metodu za validaciju, mi zapravo koristimo `Validator` objekt koji enkapsulira svu kompleksnu logiku provjere pravila
+
+### Validacija unutar kontrolera
+Najjednostavniji način za validaciju je korištenje `validate()` metode direktno na `Request` objektu.
+
+Primjer: Imamo formu za kreiranje novog blog članka. Želimo osigurati da naslov postoji, da je tekst, i da ima najmanje 3 znaka. Sadržaj također mora postojati.
+
+1. Kontroler (`PostController.php`)
+- u `store()` metodi, prije bilo kakve logike, dodajemo validaciju
+```php
+use Illuminate\Http\Request;
+
+public function store(Request $request)
+{
+    $validatedData = $request->validate(
+      [
+        'title' => 'required|string|min:3|max:255',
+        'content' => 'required|string'
+      ],
+      [
+        'title.required' => 'Molimo unesite title.',
+        'title.min' => 'Title mora imati najmanje 3 znaka.',
+        'content.required' => 'Content je obavezan.',
+      ]
+    );
+
+
+    // ako validacija prođe, kod se nastavlja
+    // $validatedData sada sadrži samo provjerene podatke
+
+    // ovdje bi išla logika za spremanje u bazu...
+
+    // Post::create($validatedData);
+
+    return "Članak je uspješno kreiran!";
+}
+```
+
+Što se događa ako validacija ne prođe?
+
+Laravel automatski radi nekoliko stvari za nas:
+- zaustavlja izvršavanje koda u metodi
+- preusmjerava korisnika natrag na prethodnu stranicu (na formu)
+- sprema sve greške validacije u sesiju
+- također sprema i stari unos (old input) kako korisnik ne bi morao ponovno ispunjavati cijelu formu
+
+Više o validaciji u [dokumentaciji](https://laravel.com/docs/12.x/validation).
+Više o pravilima validacije - [link](https://laravel.com/docs/12.x/validation#available-validation-rules).
+
+### Prikaz grešaka u pogledu (View)
+
+Sada u našem Blade pogledu (`create.blade.php`), možemo lako prikazati greške koristeći `@error` direktivu,`$message` varijablu te `old()` metodu
+```php
+<form action="/posts" method="POST">
+  @csrf
+  <div>
+    <label for="title">Naslov</label>
+    <input type="text" name="title" value="{{ old('title') }}">
+    @error('title')
+      <div style="color: red;">{{ $message }}</div>
+    @enderror
+  </div>
+
+  <div>
+    <label for="content">Sadržaj</label>
+    <textarea name="content">{{ old('content') }}</textarea>
+    @error('content')
+      <div style="color: red;">{{ $message }}</div>
+    @enderror
+  </div>
+
+  <button type="submit">Spremi</button>
+</form>
+```
+
+- `old('title')` - ako validacija padne, ovo će vratiti staru vrijednost koju je korisnik unio
+- `@error('title') ... @enderror` - ovaj blok će se prikazati samo ako postoji greška za polje title
+- `$message` - unutar `@error` bloka, ova varijabla sadrži poruku o grešci (npr. "The title field is required.")
+
+### Form Request validacija
+Validacija u kontroleru je odlična za jednostavne forme no on može vrlo brzo postati nepregledan i zatrpan logikom koja mu tu ne pripada.
+
+U tom slučaju, rješenje je `FormRequest`.
+
+Analogija: 
+Umjesto da menadžer odjela (kontroler) sam provjerava svaku osobu na ulazu, on zaposli specijalista za sigurnost (`FormRequest` klasu). 
+Sav posao provjere delegira njemu. Menadžerov posao je samo da radi s ljudima koji su već prošli provjeru.
+
+OOP veza: 
+`FormRequest` je posebna PHP klasa koja enkapsulira svu logiku validacije i autorizacije za određeni zahtjev.
+To je savršen primjer Single Responsibility Principle - kontroler se bavi obradom, a `FormRequest` se bavi validacijom.
+
+#### Kreiranje i korištenje Form Requesta
+
+1. Kreiranje klase
+- koristimo artisan naredbu `php artisan make:request StorePostRequest`
+- ova naredba kreira datoteku `app/Http/Requests/StorePostRequest.php`
+- unutar te datoteke su četiri važne metode koje možemo koristiti: `authorize()`, `rules()`, `messages()` i `withValidator()`
+
+2. Definiranje pravila i poruka
+- `authorize()` - ova metoda se izvršava prije validacije i služi za provjeru ima li korisnik uopće dozvolu da izvrši ovu akciju
+- `rules()` - ovdje premještamo naša pravila validacije iz kontrolera
+- `messages()` - (opcionalno) ovdje možemo definirati vlastite, prilagođene poruke o greškama na našem jeziku
+- `withValidator()` - (opcionalno) ovdje možemo dodati kompleksniju, uvjetnu validaciju koja se izvršava nakon osnovnih pravila
+
+```php
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
+
+class StorePostRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'title' => 'required|string|min:3|max:255',
+            'content' => 'required|string',
+            'is_published' => 'sometimes|boolean',
+            'published_at' => 'nullable|date',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'title.required' => 'Naslov je obavezno polje.',
+            'title.min' => 'Naslov mora imati najmanje :min znaka.',
+            'content.required' => 'Sadržaj ne smije biti prazan.',
+        ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function ($validator) {
+            // ako je `is_published` označeno, onda `published_at` mora postojati
+            if ($this->boolean('is_published') && !$this->filled('published_at')) {
+                $validator->errors()->add(
+                    'published_at',
+                    'Datum objave je obavezan ako je članak označen za objavu.'
+                );
+            }
+        });
+    }
+}
+```
+
+3. Korištenje u kontroleru
+- sada naš kontroler postaje čist
+- `Illuminate\Http\Request`, koristimo `StorePostRequest` klasu
+```php
+use App\Http\Requests\StorePostRequest;
+
+public function store(StorePostRequest $request)
+{
+    // ako kod stigne do ove točke, to znači da su
+    // i autorizacija i validacija već prošle
+
+    // dohvaćamo samo validirane podatke
+    $validatedData = $request->validated();
+
+    // Post::create($validatedData);
+
+    return "Članak je uspješno kreiran!";
+}
+
+```
+- Laravel automatski prepoznaje da se radi o Form Requestu, izvršava authorize, rules i ostale metode, i ako bilo što od toga ne prođe, automatski preusmjerava korisnika natrag, baš kao i prije
+- Prednosti:
+    - kontroleri su čisti i fokusirani na svoju glavnu logiku
+    - validacijska logika je enkapsulirana i na jednom mjestu
+    - pravila su ponovno iskoristiva (npr. isti `FormRequest` možemo koristiti i za store i za update metodu)
+
+## HTTP Odgovori (Responses)
+HTTP odgovori odnose se na to kako naša aplikacija odgovara klijentu. Svaka ruta ili metoda kontrolera mora na kraju vratiti nekakav odgovor koji će biti poslan natrag korisnikovom pregledniku.
+
+Analogija: 
+Ako je `Request` narudžba koju primite u restoranu, `Response` je jelo koje na kraju poslužite gostu. Može biti jednostavno (samo tanjur tjestenine), može biti kompleksno (meni od pet sljedova s bocom vina), a može biti i poruka "Žao nam je, nemamo više tog jela" (greška) ili uputa konobaru da gosta premjesti na drugi stol (preusmjeravanje).
+
+OOP veza: 
+Svi odgovori u Laravelu su instance klase `Illuminate\Http\Response` (ili njenih podklasa). Ovo nam omogućuje da s odgovorima radimo na čist, objektno-orijentiran način, umjesto da koristimo PHP funkcije poput `echo` ili `header()`. 
+
+### Osnovni odgovori
+Najjednostavniji odgovor je vraćanje stringa ili polja iz kontrolera. Laravel će ih automatski pretvoriti u ispravan HTTP odgovor.
+```php
+Route::get('/pozdrav', function () {
+    return 'Hello world!'; // Laravel će ovo pretvoriti u HTTP 200 OK odgovor
+});
+```
+```php
+Route::get('/api/korisnik', function () {
+    return ['ime' => 'Pero', 'prezime' => 'Perić']; // Laravel će ovo automatski pretvoriti u JSON
+});
+```
+
+### Response objekt i `response()` pomoćna funkcija
+Za veću kontrolu, koristimo `response()` pomoćnu funkciju koja nam daje pristup punom `Response` objektu. To nam omogućuje da prilagodimo status kod i zaglavlja (headers).
+```php
+Route::get('/greska', function () {
+    return response('Nije pronađeno.', 404)
+           ->header('Content-Type', 'text/plain');
+});
+```
+
+### Preusmjeravanja (Redirects)
+Jedan od najčešćih odgovora je preusmjeravanje. Nakon što korisnik uspješno spremi formu, ne želimo mu prikazati praznu stranicu, već ga želimo preusmjeriti na drugu lokaciju.
+
+- preusmjeravanje na imenovanu rutu (najbolja praksa)
+```php
+public function store(Request $request)
+{
+    // ... logika za spremanje ...
+
+    return redirect()->route('posts.index');
+}
+```
+
+- preusmjeravanje natrag na prethodnu stranicu - ovo je izuzetno korisno. Laravel pamti odakle je korisnik došao
+```php
+public function update(Request $request)
+{
+    // ... logika za ažuriranje ...
+
+    return back()->with('success', 'Profil je uspješno ažuriran!');
+}
+```
+- metoda `with()` "bljesne" (flashes) podatke u sesiju. To znači da će varijabla success biti dostupna samo u sljedećem HTTP zahtjevu, što je idealno za prikazivanje poruka o uspjehu.
+
+### Ostale vrste odgovora
+Laravel nudi pomoćne funkcije za kreiranje specifičnih vrsta odgovora:
+- View odgovori - najčešći odgovor za web stranice
+```php
+public function show($id)
+{
+    $post = Post::findOrFail($id);
+    return view('posts.show', ['post' => $post]);
+}
+```
+- JSON odgovori - standard za API-je; automatski postavlja `Content-Type` zaglavlje na `application/json`
+```php
+public function showApi($id)
+{
+    $post = Post::findOrFail($id);
+    return response()->json($post);
+}
+```
+- file download odgovori - kada želite da preglednik pokrene preuzimanje datoteke
+```php
+public function downloadInvoice($id)
+{
+    // ... logika za dohvat putanje do računa ...
+    $pathToInvoice = storage_path('app/invoices/invoice-'.$id.'.pdf');
+
+    return response()->download($pathToInvoice);
+}
+```
