@@ -878,7 +878,7 @@ OOP veza:
 Svi odgovori u Laravelu su instance klase `Illuminate\Http\Response` (ili njenih podklasa). Ovo nam omogućuje da s odgovorima radimo na čist, objektno-orijentiran način, umjesto da koristimo PHP funkcije poput `echo` ili `header()`. 
 
 ### Osnovni odgovori
-Najjednostavniji odgovor je vraćanje stringa ili polja iz kontrolera. Laravel će ih automatski pretvoriti u ispravan HTTP odgovor.
+Najjednostavniji odgovor je vraćanje stringa ili niza iz kontrolera. Laravel će ih automatski pretvoriti u ispravan HTTP odgovor.
 ```php
 Route::get('/pozdrav', function () {
     return 'Hello world!'; // Laravel će ovo pretvoriti u HTTP 200 OK odgovor

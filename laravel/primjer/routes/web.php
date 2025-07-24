@@ -122,3 +122,18 @@ Route::post('/slike/store', [SlikeController::class, 'store']);
 
 Route::get('/posts/create', [PostController::class, 'create']);
 Route::post('/posts/store', [PostController::class, 'store']);
+
+
+Route::get('/poz', function() {
+  return 'Hello world';
+});
+Route::get('/json', function() {
+  return [
+    "ime" => "Luka",
+    "zanimanje" => 'Developer'
+  ];
+});
+
+Route::get('/greska', function () {
+  return response(['greska' => 'Not found'], 404)->header('Content-Type', 'application/json');
+});
