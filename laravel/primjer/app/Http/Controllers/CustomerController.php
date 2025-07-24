@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\CustomerRequest;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
@@ -22,7 +23,8 @@ class CustomerController extends Controller
       return view('customers/create');
     }
 
-    public function store(Request $request) {
+    public function store(CustomerRequest $request) {
+
       return "Hvala što ste nas kontaktirali putem emaila. Javit ćemo vam se s odgovorom na {$request->input('email')}";
     }
 }

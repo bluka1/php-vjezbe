@@ -7,11 +7,15 @@
   <title>Document</title>
 </head>
 <body>
+  {{-- {{$uspjeh}} --}}
   <form action="{{route('books.store')}}" method="POST">
     @csrf
     <div>
       <label>Naslov: <br>
-        <input type="text" name="naslov" id="naslov">
+        <input type="text" name="naslov" id="naslov" value="{{old('naslov')}}">
+        @error('naslov')
+          <p style="color:red">{{$message}}</p>
+        @enderror
       </label>
     </div>
     <input type="submit" value="Dodaj novu knjigu">

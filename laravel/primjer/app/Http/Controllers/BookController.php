@@ -23,8 +23,8 @@ class BookController extends Controller
      */
     public function create()
     {
-      return "Create book";
-        // return view('books/create');
+      // return "Create book";
+        return view('books/create');
     }
 
     /**
@@ -34,6 +34,25 @@ class BookController extends Controller
     {
       // $this->books[] = "Nova knjiga";
       // return view('books/index', ['books' => $this->books]);
+
+      $request->validate(
+        [
+          "naslov" => "required|uppercase"
+        ],
+        [
+          "naslov.required" => "Molimo unesite naslov.",
+          "naslov.uppercase" => "Molimo unesite naslov velikim slovima npr. NADA"
+        ]
+      );
+
+      // spremiti u bazu
+      // $uspjeh = "USPJEH!";
+
+      // return view('books/create', [
+      //   "uspjeh" => $uspjeh
+      // ]);
+
+      return "Nova knjiga dodana!";
     }
 
     /**

@@ -13,7 +13,10 @@
     @csrf
     <label>
       Email:
-      <input type="email" name="email" id="email">
+      <input type="email" name="email" id="email" value="{{old('email')}}">
+      @error('email')
+        <p style="color: red">{{$message}}</p>
+      @enderror
     </label>
     <br>
     <input type="submit" value="Pošalji email">

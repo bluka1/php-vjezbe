@@ -106,3 +106,8 @@ Route::post('/profile/store', [ProfileController::class, 'store']);
 // ruta za post metodu mora prikazati lokaciju uploadane slike i originalno ime datoteke
 Route::get('/slike/upload', [SlikeController::class, 'create']);
 Route::post('/slike/store', [SlikeController::class, 'store']);
+
+// zadatak - validacija
+// u BookController u store metodi dodati validaciju za polje naslov
+// dovoljno je 2 pravila
+// validacijske greške i stari unos prikazati na ekranu

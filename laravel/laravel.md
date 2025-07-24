@@ -775,7 +775,7 @@ Validacija u kontroleru je odlična za jednostavne forme no on može vrlo brzo p
 U tom slučaju, rješenje je `FormRequest`.
 
 Analogija: 
-Umjesto da menadžer odjela (kontroler) sam provjerava svaku osobu na ulazu, on zaposli specijalista za sigurnost (`FormRequest` klasu). 
+Umjesto da menadžer odjela (kontroler) sam provjerava svaku osobu na ulazu, on zaposli zaštitara (`FormRequest` klasu). 
 Sav posao provjere delegira njemu. Menadžerov posao je samo da radi s ljudima koji su već prošli provjeru.
 
 OOP veza: 
