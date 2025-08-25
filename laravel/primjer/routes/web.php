@@ -13,6 +13,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RouteController;
 use App\Http\Controllers\SlikeController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\WelcomeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -137,3 +138,15 @@ Route::get('/json', function() {
 Route::get('/greska', function () {
   return response(['greska' => 'Not found'], 404)->header('Content-Type', 'application/json');
 });
+
+Route::get('/welcome', [WelcomeController::class, 'index']);
+
+// ZADATAK
+// dodajte novu metodu u WelcomeController
+// stvorite novi view pomoću artisan komande
+// vratite taj view unutar nove metode
+// proslijedite podatke o vašem hobiju i vašem najdražem voću u view te ih prikažite
+Route::get('/welcome/hobby', [WelcomeController::class, 'show']);
+
+Route::get('/welcome/create', [WelcomeController::class, 'create']);
+Route::post('/welcome/store', [WelcomeController::class, 'store']);

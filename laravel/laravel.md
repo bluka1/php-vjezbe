@@ -951,3 +951,803 @@ public function downloadInvoice($id)
     return response()->download($pathToInvoice);
 }
 ```
+
+## Pogledi (Views)
+Pogledi su V u MVC (Model-View-Controller) arhitekturi. Njihova jedina svrha je da prikazuju podatke u HTML formatu. Sva logika za dohvaćanje i obradu podataka pripada kontroleru, a pogled je tu samo da te podatke lijepo prezentira.
+
+### Kreiranje i vraćanje pogleda
+Svi pogledi u Laravelu se nalaze u `resources/views` direktoriju. To su datoteke s `.blade.php` ekstenzijom.
+
+1. kreiranje pogleda
+```php
+// pozdrav.blade.php
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dobrodošlica</title>
+</head>
+<body>
+    <h1>Pozdrav iz našeg prvog pogleda!</h1>
+</body>
+</html>
+```
+
+- pogled možemo kreirati manualno izradom datoteke ili pomoću naredbe - `php artisan make:view folder.ime`
+
+2. vraćanje pogleda iz kontrolera
+U kontroleru koristimo `view()` pomoćnu funkciju kako bismo vratili view
+
+```php
+// u kontroleru - npr. WelcomeController.php
+public function show()
+{
+    // Laravel će potražiti datoteku 'resources/views/pozdrav.blade.php'
+    return view('pozdrav');
+}
+```
+
+### Organizacija pogleda u poddirektorijima
+Poglede možemo organizirati u poddirektorije za bolju strukturu:
+
+```php
+// za pogled na putanji resources/views/admin/dashboard.blade.php
+return view('admin.dashboard');
+
+// možemo koristiti i kosu crtu
+return view('admin/dashboard');
+```
+
+### Provjera postojanja pogleda
+Prije vraćanja pogleda, možemo provjeriti postoji li:
+
+```php
+use Illuminate\Support\Facades\View;
+
+if (View::exists('emails.customer')) {
+    return view('emails.customer');
+}
+
+// vraćanje prvog pogleda koji postoji
+return view()->first(['custom.admin', 'admin'], $data);
+```
+
+### Prosljeđivanje podataka u pogled
+Rijetko kada imamo statične stranice, odnosno stranice u koje nećemo ubaciti apsolutno nikakve podatke. Najčešće želimo prikazati dinamičke podatke koje smo dohvatili u kontroleru iz baze ili s nekog API-a. Podatke prosljeđujemo kao drugi argument `view()` funkciji, u obliku asocijativnog polja (najčešće korišteni način prosljeđivanja podataka).
+
+```php
+// u WelcomeController.php
+public function show()
+{
+    $imeKorisnika = 'Pero';
+    $grad = 'Zagreb';
+
+    return view('pozdrav', [
+        'ime' => $imeKorisnika,
+        'lokacija' => $grad
+    ]);
+    
+    // alternativni načini:
+    // korištenje with() metode
+    return view('pozdrav')
+            ->with('ime', $imeKorisnika)
+            ->with('lokacija', $grad);
+    
+    // korištenje compact() funkcije
+    $ime = $imeKorisnika;
+    $lokacija = $grad;
+    return view('pozdrav', compact('ime', 'lokacija'));
+}
+```
+
+Sada unutar `pozdrav.blade.php`, možemo pristupiti tim podacima koristeći standardnu PHP sintaksu
+
+```php
+<h1>Pozdrav, <?php echo $ime; ?>!</h1>
+<p>Drago nam je što ste nam se javili iz grada: <?php echo $lokacija; ?>.</p>
+```
+
+Ovo radi, ali nije baš elegantno. Kako bismo to jednostavnije odradili, pomoći će nam blade predlošci.
+
+### Dijeljenje podataka sa svim pogledima (napredna tematika)
+Ponekad trebamo neke podatke učiniti dostupnima svim pogledima:
+
+```php
+// u AppServiceProvider boot() metodi
+use Illuminate\Support\Facades\View;
+
+public function boot()
+{
+    View::share('nazivAplikacije', 'Moja Laravel Aplikacija');
+    
+    // ili samo za specifične poglede
+    View::composer('dashboard', function ($view) {
+        $view->with('brojKorisnika', User::count());
+    });
+}
+```
+
+## URL generiranje
+Laravel pruža nekoliko pomoćnih funkcija za generiranje URL-ova koje možemo koristiti u pogledima:
+
+### url() helper
+Generira potpuni URL do zadane putanje:
+
+```php
+// u Blade pogledu
+<a href="{{ url('/kontakt') }}">Kontaktirajte nas</a>
+<a href="{{ url('/korisnik', $id) }}">Profil korisnika</a>
+
+{{ url()->current() }} // trenutni URL
+{{ url()->full() }}  // s query stringom
+{{ url()->previous() }}  // prethodni URL
+```
+
+### route() helper
+Generira URL na temelju imena rute (preporučeno):
+
+```php
+// ako imamo rutu Route::get('/profil/{id}', ...)->name('profil.show');
+<a href="{{ route('profil.show', ['id' => $korisnik->id]) }}">Moj profil</a>
+
+// provjera trenutne rute
+@if(Route::currentRouteName() == 'home')
+    <p>Na početnoj ste stranici!</p>
+@endif
+```
+
+### asset() helper
+Za dodavanje CSS, JavaScript i drugih resursa:
+
+```php
+<link rel="stylesheet" href="{{ asset('css/app.css') }}">
+<script src="{{ asset('js/app.js') }}"></script>
+<img src="{{ asset('images/logo.png') }}" alt="Logo">
+
+// za sigurne HTTPS linkove
+<link rel="stylesheet" href="{{ secure_asset('css/app.css') }}">
+```
+
+## Uvod u Blade predloške
+Blade je moćni sustav predložaka koji nam omogućuje da pišemo HTML na puno čišći i čitljiviji način nego u standardnom PHP-u, pružajući nam prečace za uobičajene PHP zadatke. Važno je znati da se sav Blade kod na kraju kompajlira u čisti PHP kod, tako da nema nikakvog gubitka performansi.
+
+### Prikazivanje podataka
+Umjesto `<?php echo $varijabla; ?>`, u Bladeu koristimo dvostruke vitičaste zagrade:
+
+`{{ $varijabla }}`
+
+Primjer:
+
+`<h1>Pozdrav, {{ $ime }}!</h1>`
+
+Ovo je puno čišće. Ali, još važnije, Blade automatski štiti od XSS napada (XSS - Cross-Site Scripting je sigurnosni propust gdje napadač unese maliciozni kod (najčešće JavaScript) u vašu web stranicu, npr. kroz polje za komentar). To znači da ako varijabla `$ime` sadrži maliciozni JavaScript kod, Blade će ga automatski "očistiti" (escapati) tako da se prikaže kao običan tekst, a ne kao izvršni kod.
+
+### Prikazivanje ne-escapanih podataka
+Ako ste sigurni da su podaci sigurni i trebate prikazati HTML:
+
+```php
+// OPREZ - koristite samo ako ste 100% sigurni da su podaci sigurni!
+{{!! $htmlSadrzaj !!}}
+```
+
+### Blade direktive - uvjeti i petlje
+Blade nudi jednostavne direktive za kontrolne strukture koje počinju sa znakom `@`.
+
+UVJETI:
+- `@if, @elseif, @else, @endif`
+```php
+@if (count($korisnici) === 1)
+    Imamo samo jednog korisnika!
+@elseif (count($korisnici) > 1)
+    Imamo više korisnika!
+@else
+    Nemamo nijednog korisnika.
+@endif
+```
+
+- `@unless`
+    - suprotno od `@if` - izvršava se ako je uvjet netočan
+```php
+@unless (Auth::check())
+  Molimo prijavite se.
+@endunless
+```
+
+- `@isset`
+    - izvršava se ako varijabla postoji i nije null
+```php
+@isset($zapis)
+  Prikaz zapisa...
+@endisset
+```
+
+- `@empty`
+    - izvršava se ako je varijabla prazna
+        - "prazno" znači da je vrijednost `null`, `false`, `0`, prazan string ('') ili prazno polje `[]`
+```php
+@empty($komentari)
+    <p>Ovaj korisnik još nema nijedan komentar.</p>
+@endempty
+```
+
+- `@auth i @guest`
+    - provjera je li korisnik prijavljen
+```php
+@auth
+    <p>Dobrodošli, {{ Auth::user()->name }}!</p>
+    <a href="{{ route('logout') }}">Odjava</a>
+@endauth
+
+@guest
+    <a href="{{ route('login') }}">Prijava</a>
+    <a href="{{ route('register') }}">Registracija</a>
+@endguest
+
+// za specifični guard
+@auth('admin')
+    <p>Prijavljen kao administrator</p>
+@endauth
+```
+
+PETLJE:
+
+- `@foreach`
+    - unutar nje dostupna je $loop varijabla s korisnim informacijama
+```php
+<ul>
+    @foreach ($korisnici as $korisnik)
+        <li>
+            {{ $loop->iteration }}. {{ $korisnik->ime }}
+            @if ($loop->first)
+                (Prvi korisnik)
+            @endif
+            @if ($loop->last)
+                (Zadnji korisnik)
+            @endif
+        </li>
+    @endforeach
+</ul>
+```
+
+- `$loop` svojstva:
+    - $loop->index - indeks trenutne iteracije (počinje od 0)
+    - $loop->iteration - broj trenutne iteracije (počinje od 1)
+    - $loop->remaining - broj preostalih iteracija
+    - $loop->count - ukupan broj elemenata
+    - $loop->first - true ako je prva iteracija
+    - $loop->last - true ako je zadnja iteracija
+    - $loop->even - true ako je paran broj iteracije
+    - $loop->odd - true ako je neparan broj iteracije
+    - $loop->depth - razina ugniježđenja petlje
+    - $loop->parent - $loop varijabla roditelj petlje (kod ugniježđenih)
+
+- `@forelse` (najbolji izbor kada niste sigurni hoće li polje biti prazno)
+```php
+@forelse ($korisnici as $korisnik)
+    <li>{{ $korisnik->ime }}</li>
+@empty
+    <p>Nema registriranih korisnika.</p>
+@endforelse
+```
+
+- `@for` petlja
+```php
+@for ($i = 0; $i < 10; $i++)
+    Broj je {{ $i }} <br>
+@endfor
+```
+
+- `@while` petlja
+```php
+@php $i = 0; @endphp
+@while ($i < 5)
+    <p>Trenutna vrijednost je {{ $i }}</p>
+    @php $i++; @endphp
+@endwhile
+```
+
+- `@continue i @break`
+```php
+@foreach ($korisnici as $korisnik)
+    @if ($korisnik->tip == 'admin')
+        @continue
+    @endif
+
+    @if ($korisnik->blokiran)
+        @break
+    @endif
+
+    <li>{{ $korisnik->ime }}</li>
+@endforeach
+
+// Mogu primiti uvjet direktno
+@foreach ($korisnici as $korisnik)
+    @continue($korisnik->tip == 'admin')
+    @break($korisnik->blokiran)
+    
+    <li>{{ $korisnik->ime }}</li>
+@endforeach
+```
+
+### Uključivanje podview-ova - @include direktiva
+`@include` služi za uključivanje drugih Blade pogleda u trenutni pogled:
+
+```php
+// uključi pogled 'shared.errors'
+@include('shared.errors')
+
+// prosljeđivanje dodatnih podataka
+@include('view.name', ['status' => 'active'])
+
+// uključi ako postoji
+@includeIf('view.name', ['status' => 'active'])
+
+// uključi ako je uvjet ispunjen
+@includeWhen($errors->any(), 'shared.errors')
+@includeUnless($errors->any(), 'shared.success')
+
+// uključi prvi koji postoji
+@includeFirst(['custom.admin', 'admin'], ['status' => 'active'])
+```
+
+### Blade forme i CSRF zaštita
+Laravel automatski generira CSRF token za svaku aktivnu korisničku sesiju. Ovaj token se koristi za provjeru da je autenticirani korisnik osoba koja zapravo šalje zahtjeve.
+
+```php
+<form method="POST" action="/profil">
+    @csrf  <!-- generira skriveno polje s CSRF tokenom -->
+    
+    <input type="text" name="ime" value="{{ old('ime') }}">
+    <button type="submit">Spremi</button>
+</form>
+
+// Za druge HTTP metode
+<form method="POST" action="/profil/{{ $id }}">
+    @csrf
+    @method('PUT')  <!-- generira skriveno _method polje -->
+    ...
+</form>
+
+// moguće metode: PUT, PATCH, DELETE
+```
+
+### Rad s greškama validacije
+Laravel automatski dijeli greške validacije sa svim pogledima:
+
+```php
+<!-- prikaz svih grešaka -->
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul>
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+<!-- Prikaz greške za specifično polje -->
+@error('email')
+    <span class="invalid-feedback">{{ $message }}</span>
+@enderror
+
+<!-- Dodavanje CSS klase ako ima greške -->
+<input type="email" 
+       name="email" 
+       class="form-control @error('email') is-invalid @enderror"
+       value="{{ old('email') }}">
+```
+
+### old() helper funkcija
+Čuva stare vrijednosti nakon neuspješne validacije:
+
+```php
+<!-- osnovno korištenje -->
+<input type="text" name="ime" value="{{ old('ime') }}">
+
+<!-- sa zadanom vrijednošću -->
+<input type="text" name="ime" value="{{ old('ime', $korisnik->ime) }}">
+
+<!-- za select -->
+<select name="grad">
+    <option value="zagreb" {{ old('grad') == 'zagreb' ? 'selected' : '' }}>
+        Zagreb
+    </option>
+    <option value="split" {{ old('grad') == 'split' ? 'selected' : '' }}>
+        Split
+    </option>
+</select>
+
+<!-- za checkbox -->
+<input type="checkbox" 
+       name="newsletter" 
+       {{ old('newsletter') ? 'checked' : '' }}>
+
+<!-- za radio -->
+<input type="radio" 
+       name="spol" 
+       value="m" 
+       {{ old('spol') == 'm' ? 'checked' : '' }}>
+```
+
+### @class i @style direktive
+Za dinamičko dodavanje CSS klasa i stilova (Laravel 9+):
+
+```php
+@php
+    $isActive = true;
+    $hasError = false;
+@endphp
+
+<div @class([
+    'p-4',
+    'font-bold' => $isActive,
+    'text-gray-500' => !$isActive,
+    'bg-red' => $hasError,
+])>
+    Sadržaj
+</div>
+
+<div @style([
+    'background-color: red',
+    'font-weight: bold' => $isActive,
+])>
+    Sadržaj
+</div>
+```
+
+### Blade nasljeđivanje (Layouts)
+Jedan od najvećih problema u izradi web stranica je ponavljanje koda. Svaka stranica obično ima isti header, navigaciju i footer. Bilo bi grozno da to moramo kopirati u svaku datoteku.
+
+Blade ovo rješava elegantno kroz nasljeđivanje predložaka (template inheritance).
+
+1. kreiranje glavnog Layouta
+- u `resources/views/` kreiramo novi direktorij `layouts`
+- unutar njega, kreiramo datoteku `app.blade.php` koja će biti naš "okvir"
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Moja Aplikacija - @yield('title')</title>
+    
+    <!-- stack za dodatne CSS datoteke -->
+    @stack('styles')
+</head>
+<body>
+    <header>
+        <h1>Glavna navigacija</h1>
+    </header>
+
+    <main>
+        @yield('content')
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Moja Tvrtka</p>
+    </footer>
+    
+    <!-- stack za JavaScript -->
+    @stack('scripts')
+</body>
+</html>
+```
+
+- ključna je `@yield('ime_sekcije')` direktiva koja definira "rupu" ili "utor" koji će podređeni pogledi popuniti svojim sadržajem
+
+### Proširivanje (Extending) Layouta
+- sada `home.blade.php` ne mora sadržavati sav HTML, već samo proširuje glavni layout i definira sadržaj za "utore"
+```php
+<!-- resources/views/home.blade.php -->
+@extends('layouts.app')
+
+@section('title', 'Početna stranica')
+
+@section('content')
+    <h2>Dobrodošli na našu početnu stranicu!</h2>
+    <p>Ovo je sadržaj specifičan samo za ovu stranicu.</p>
+@endsection
+
+@push('scripts')
+    <script src="/js/home-page.js"></script>
+@endpush
+```
+
+- `@extends('layouts.app')` - govori Bladeu da koristi `app.blade.php` iz layouts direktorija kao svoj okvir
+
+- `@section('title', '...')` - definira sadržaj za `@yield('title')` utor
+
+- `@section('content') ... @endsection` - definira glavni sadržaj za `@yield('content')` utor
+
+### @parent direktiva
+Omogućava dodavanje sadržaja postojećoj sekciji:
+
+```php
+<!-- u layoutu -->
+@section('sidebar')
+    <h3>Glavna navigacija</h3>
+@show
+
+<!-- u pogledu koji nasljeđuje -->
+@section('sidebar')
+    @parent  <!-- zadržava sadržaj iz layouta -->
+    <h4>Dodatna navigacija</h4>
+@endsection
+```
+
+- `@show` - koristite u glavnom layoutu da biste definirali sekciju koja ima neki početni, zadani sadržaj, a koju onda u podređenim pogledima možete ili potpuno zamijeniti ili elegantno nadopuniti pomoću `@parent`
+
+### Blade komponente
+Nasljeđivanje je odlično za strukturu cijele stranice, ali postoji problem ponavljanja manjih komponenata poput gumba, kartica (cards), modala ili poruka o grešci. Za to koristimo Blade komponente.
+
+#### Klasične komponente (Class-based)
+Laravel omogućava kreiranje komponenti kao PHP klasa:
+
+```bash
+# kreiranje komponente preko Artisan komande
+php artisan make:component Alert
+```
+
+Ovo kreira dva fajla:
+- `app/View/Components/Alert.php` - PHP klasa
+- `resources/views/components/alert.blade.php` - Blade predložak
+
+```php
+// app/View/Components/Alert.php
+namespace App\View\Components;
+
+use Illuminate\View\Component;
+
+class Alert extends Component
+{
+    public $type;
+    public $message;
+
+    public function __construct($type = 'info', $message = '')
+    {
+        $this->type = $type;
+        $this->message = $message;
+    }
+
+    public function render()
+    {
+        return view('components.alert');
+    }
+    
+    // dodatne metode dostupne u pogledu
+    public function alertClass()
+    {
+        return [
+            'info' => 'alert-info',
+            'danger' => 'alert-danger',
+            'success' => 'alert-success',
+        ][$this->type] ?? 'alert-info';
+    }
+}
+```
+
+#### Anonimne komponente
+- kreiranje i korištenje komponente
+    - u `resources/views/` kreiramo novi direktorij `components`
+    - unutar njega, kreiramo datoteku za našu komponentu, npr. `alert.blade.php`
+
+```php
+<!-- resources/views/components/alert.blade.php -->
+@props(['type' => 'info', 'message'])
+
+@php
+    $classes = [
+        'info' => 'background-color: lightblue; border: 1px solid blue;',
+        'danger' => 'background-color: lightcoral; border: 1px solid red;',
+        'success' => 'background-color: lightgreen; border: 1px solid green;',
+    ];
+@endphp
+
+<div style="{{ $classes[$type] }} padding: 15px; margin-bottom: 20px;">
+    <strong>Upozorenje!</strong> {{ $message }}
+</div>
+```
+
+- `@props([...])` - definira koje "atribute" (podatke) naša komponenta očekuje (ovdje očekujemo type (s zadanom vrijednošću 'info') i message)
+
+- korištenje komponente u bilo kojem pogledu
+    - sada možemo koristiti našu komponentu kao da je standardni HTML tag, s prefiksom x-
+```html
+<x-alert type="danger" message="Došlo je do greške prilikom spremanja." />
+<x-alert message="Vaš profil je uspješno ažuriran." />
+```
+- prvi primjer će prikazati crvenu poruku, a drugi plavu (jer koristi zadanu info vrijednost)
+
+#### Proslijeđivanje atributa
+Komponente mogu automatski proslijediti HTML atribute:
+
+```php
+<!-- u komponenti -->
+@props(['type' => 'info'])
+
+<div {{ $attributes->merge(['class' => 'alert alert-' . $type]) }}>
+    {{ $slot }}
+</div>
+
+<!-- korištenje -->
+<x-alert type="danger" class="mt-4" id="main-alert">
+    Poruka
+</x-alert>
+<!-- rezultat: <div class="alert alert-danger mt-4" id="main-alert"> -->
+```
+
+### Slotovi i Stackovi
+
+#### Slotovi (Slots)
+Slotovi služe kako bi naša komponenta mogla primiti cijele komade html koda.
+
+1. zadani (Default) Slot
+- svaka komponenta ima jedan zadani, neimenovani slot - to je sav sadržaj koji stavite unutar x- tagova
+
+- prilagodimo našu alert komponentu da koristi slot
+```php
+<!-- resources/views/components/alert.blade.php -->
+@props(['type' => 'info'])
+...
+<div style="...">
+    {{ $slot }} <!-- Ovdje će se ubaciti HTML -->
+</div>
+```
+
+- sada je možemo koristiti ovako
+```html
+<x-alert type="danger">
+    <h4>Došlo je do greške!</h4>
+    <p>Molimo provjerite unesene podatke.</p>
+</x-alert>
+```
+
+- sav HTML unutar <x-alert> tagova bit će umetnut na mjesto {{ $slot }} varijable
+
+2. imenovani Slotovi (Named Slots)
+- ponekad komponenta treba više "utora" npr. kartica (card) može imati naslov i tijelo
+```php
+<!-- resources/views/components/card.blade.php -->
+<div style="border: 1px solid #ccc; padding: 15px;">
+    <h1>{{ $title }}</h1> <!-- Imenovani slot za naslov -->
+    <hr>
+    <div>
+        {{ $slot }} <!-- Zadani slot za glavni sadržaj -->
+    </div>
+    @isset($footer)
+    <footer>
+        {{ $footer }} <!-- Imenovani slot za podnožje -->
+    </footer>
+    @endisset
+</div>
+```
+
+- koristimo je ovako
+```html
+<x-card>
+    <x-slot:title>
+        Naslov kartice
+    </x-slot>
+
+    <x-slot:footer>
+        Ovo je podnožje kartice.
+    </x-slot>
+
+    <!-- Sve ostalo ide u zadani slot -->
+    <p>Ovo je glavni sadržaj kartice.</p>
+</x-card>
+```
+
+#### Stackovi (Stacks)
+Stackovi rješavaju problem dodavanja CSS-a ili JavaScripta iz podređenog pogleda u <head> ili na kraj <body> taga glavnog layouta.
+
+1. definiranje stacka u layoutu (`layouts/app.blade.php`)
+
+```html
+<head>
+    ...
+    @stack('styles') <!-- Mjesto za CSS -->
+</head>
+<body>
+    ...
+    @stack('scripts') <!-- Mjesto za JS -->
+</body>
+```
+
+2. guranje sadržaja na stack iz pogleda
+- recimo da samo naša stranica s galerijom treba posebnu JavaScript biblioteku
+```php
+<!-- resources/views/gallery.blade.php -->
+@extends('layouts.app')
+
+@section('content')
+    ... sadržaj galerije ...
+@endsection
+
+@push('scripts')
+    <script src="/js/gallery-plugin.js"></script>
+@endpush
+
+@push('styles')
+    <link rel="stylesheet" href="/css/gallery.css">
+@endpush
+```
+- `@push` će odraditi ubacivanje plugina na stranicu
+- sada će se `gallery-plugin.js` učitati samo na ovoj stranici i bit će ispravno smješten na dnu <body> taga, kako je definirano u glavnom layoutu
+
+- `@prepend` - dodaje sadržaj na početak stacka
+```php
+@prepend('scripts')
+    <script>
+        // ovaj kod će biti prvi u stacku
+        console.log('Učitavam prvi');
+    </script>
+@endprepend
+```
+
+- `@once` - osigurava da se sadržaj doda samo jednom
+```php
+@once
+    @push('scripts')
+        <script src="/js/analytics.js"></script>
+    @endpush
+@endonce
+```
+
+### PHP kod u Blade predlošcima
+Iako Blade omogućava pisanje čistog PHP koda, treba ga koristiti minimalno:
+
+```php
+@php
+    $counter = 1;
+    $maxItems = 10;
+    // kompleksnija logika
+    $formattedDate = Carbon::parse($date)->format('d.m.Y');
+    $isWeekend = Carbon::parse($date)->isWeekend();
+@endphp
+```
+
+### Komentari u Blade
+```php
+{{-- Ovo je Blade komentar koji se neće prikazati u HTML-u --}}
+
+<!-- Ovo je HTML komentar koji će biti vidljiv u pregledniku -->
+```
+
+### Prilagođene Blade direktive
+Možete kreirati vlastite Blade direktive u service provideru:
+
+```php
+// u AppServiceProvider boot() metodi
+use Illuminate\Support\Facades\Blade;
+
+Blade::directive('datetime', function ($expression) {
+    return "<?php echo ($expression)->format('d.m.Y H:i'); ?>";
+});
+
+// korištenje
+@datetime($user->created_at)
+```
+
+### Najbolje prakse
+
+1. **Držite logiku van pogleda** - sva poslovna logika treba biti u kontrolerima ili servisima
+2. **Koristite komponente** - za elemente koji se ponavljaju
+3. **Organizirajte poglede** - koristite poddirektorije za grupiranje povezanih pogleda
+4. **Imenujte dosljedno** - koristite snake_case ili kebab-case za nazive datoteka
+5. **Minimizirajte PHP u pogledima** - koristite Blade direktive umjesto čistog PHP-a
+6. **Korištenje @forelse** - uvijek kad iterirate kroz kolekciju koja može biti prazna
+7. **Escapajte output** - koristite {{ }} osim ako niste 100% sigurni da je sadržaj siguran
+
+### Debugging pogleda
+Za lakše otkrivanje grešaka:
+
+```php
+// prikaži sve dostupne varijable
+{{ dd(get_defined_vars()['__data']) }}
+
+// dump varijablu bez zaustavljanja
+@dump($varijabla)
+
+// dump i die
+@dd($varijabla)
+```
