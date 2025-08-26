@@ -161,3 +161,6 @@ Route::get('/kontakt', [WelcomeController::class, 'kontakt']);
 // pripremite prostor za yield title, yield naslov u headeru i yield content u main elementu
 // iskoristite layout u 2 nova view-a
 // napravite komponentu button s jednim slotom po imenu ikona i jednim propom po imenu text
+
+Route::get('/proizvodi', [WelcomeController::class, 'proizvodi']);
+Route::get('/narudzbe', [WelcomeController::class, 'narudzbe']);

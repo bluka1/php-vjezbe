@@ -66,4 +66,12 @@ class WelcomeController extends Controller
   public function kontakt () {
     return view('welcome.kontakt');
   }
+
+  public function proizvodi () {
+    return view('welcome.proizvodi');
+  }
+
+  public function narudzbe () {
+    return view('welcome.narudzbe');
+  }
 }
