@@ -1547,7 +1547,7 @@ class Alert extends Component
 </div>
 ```
 
-- `@props([...])` - definira koje "atribute" (podatke) naša komponenta očekuje (ovdje očekujemo type (s zadanom vrijednošću 'info') i message)
+- `@props([...])` - definira koje "atribute" (podatke) naša komponenta očekuje (ovdje očekujemo type (sa zadanom vrijednošću 'info') i message)
 
 - korištenje komponente u bilo kojem pogledu
     - sada možemo koristiti našu komponentu kao da je standardni HTML tag, s prefiksom x-
@@ -1567,8 +1567,9 @@ Komponente mogu automatski proslijediti HTML atribute:
 <div {{ $attributes->merge(['class' => 'alert alert-' . $type]) }}>
     {{ $slot }}
 </div>
-
-<!-- korištenje -->
+```
+```php
+<!-- korištenje komponente -->
 <x-alert type="danger" class="mt-4" id="main-alert">
     Poruka
 </x-alert>
@@ -1706,7 +1707,7 @@ Iako Blade omogućava pisanje čistog PHP koda, treba ga koristiti minimalno:
 @endphp
 ```
 
-### Komentari u Blade
+### Komentari u Blade-u
 ```php
 {{-- Ovo je Blade komentar koji se neće prikazati u HTML-u --}}
 

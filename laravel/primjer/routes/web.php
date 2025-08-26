@@ -150,3 +150,14 @@ Route::get('/welcome/hobby', [WelcomeController::class, 'show']);
 
 Route::get('/welcome/create', [WelcomeController::class, 'create']);
 Route::post('/welcome/store', [WelcomeController::class, 'store']);
+
+Route::get('/pocetna', [WelcomeController::class, 'pocetna']);
+Route::get('/onama', [WelcomeController::class, 'onama']);
+Route::get('/kontakt', [WelcomeController::class, 'kontakt']);
+
+// u WelcomeController dodajte nove 2 metode
+// napravite container.blade.php layout komponentu
+// dodajte stilove i osnovnu strukturu u container.blade.php
+// pripremite prostor za yield title, yield naslov u headeru i yield content u main elementu
+// iskoristite layout u 2 nova view-a
+// napravite komponentu button s jednim slotom po imenu ikona i jednim propom po imenu text

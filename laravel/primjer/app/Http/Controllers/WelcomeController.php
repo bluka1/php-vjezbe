@@ -54,4 +54,16 @@ class WelcomeController extends Controller
 
     return view('welcome.create', $validatedData);
   }
+
+  public function pocetna () {
+    return view('welcome.pocetna');
+  }
+
+  public function onama () {
+    return view('welcome.onama');
+  }
+
+  public function kontakt () {
+    return view('welcome.kontakt');
+  }
 }
