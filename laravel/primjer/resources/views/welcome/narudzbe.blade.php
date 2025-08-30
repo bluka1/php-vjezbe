@@ -21,4 +21,4 @@
       <li>Banane</li>
     </ul>
   </div>
-@endsection()
+@endsection

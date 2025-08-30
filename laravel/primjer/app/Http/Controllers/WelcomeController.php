@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 
 class WelcomeController extends Controller
@@ -73,5 +74,71 @@ class WelcomeController extends Controller
 
   public function narudzbe () {
     return view('welcome.narudzbe');
+  }
+
+  public function prijava () {
+    return view('welcome.prijava');
+  }
+
+  public function obrada (Request $request) {
+    $validatedData = $request->validate(
+      [
+        "email" => ['required', 'email'],
+        "password" => ['required', 'string']
+      ]
+    );
+
+    // $credentials = [
+    //   'email' => $validatedData['email'],
+    //   'password' => $validatedData['password'],
+    // ];
+
+
+    // pokušaj prijave
+    if (Auth::attempt($validatedData)) {
+        // regeneracija sesije (sigurnosna mjera)
+        $request->session()->regenerate();
+        
+        return redirect('/prijava');
+    }
+
+    // ako prijava nije uspjela
+    return back()->withErrors([
+        'email' => 'Podaci za prijavu nisu ispravni.',
+    ])->onlyInput('email');
+  }
+
+  public function odjava (Request $request) {
+    Auth::logout();
+
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect('/prijava');
+  }
+
+  public function login () {
+    return view('welcome.login');
+  }
+
+  public function logout (Request $request) {
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect('/login');
+  }
+
+  public function process (Request $request) {
+    $credentials = $request->validate([
+      'email' => ['required', 'email'],
+      'password' => ['required']
+    ]);
+
+    if (Auth::attempt($credentials)) {
+      $request->session()->regenerate();
+      return view('welcome.login');
+    }
+
+    return back()->withErrors(['email' => 'Neuspješna prijava. Neispravni login podaci.'])->onlyInput('email');
   }
 }

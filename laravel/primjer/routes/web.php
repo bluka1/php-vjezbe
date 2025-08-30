@@ -164,3 +164,17 @@ Route::get('/kontakt', [WelcomeController::class, 'kontakt']);
 
 Route::get('/proizvodi', [WelcomeController::class, 'proizvodi']);
 Route::get('/narudzbe', [WelcomeController::class, 'narudzbe']);
+
+
+Route::get('/login', [WelcomeController::class, 'login']);
+Route::post('/logout', [WelcomeController::class, 'logout']);
+Route::post('/process', [WelcomeController::class, 'process']);
+
+// dodajte novog usera u bazu - ako ste već pokretali seedanje, izbrišite podatke u tablici baze
+// pokrenite seedanje s 1 novim i jednim starim userom
+// isprobajte login - logout flow s novim userom
+// napravite nove rute i nove view-ove te implementirajte login-logout flow
+
+Route::get('/prijava', [WelcomeController::class, 'prijava']);
+Route::post('/obrada', [WelcomeController::class, 'obrada']);
+Route::post('/odjava', [WelcomeController::class, 'odjava']);

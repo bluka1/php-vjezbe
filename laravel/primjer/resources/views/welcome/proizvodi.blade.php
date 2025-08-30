@@ -25,4 +25,4 @@
       <x-slot:ikona>X</x-slot:ikona>
     </x-button>
   </div>
-@endsection()
+@endsection

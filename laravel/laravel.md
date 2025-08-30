@@ -1752,3 +1752,1525 @@ Za lakše otkrivanje grešaka:
 // dump i die
 @dd($varijabla)
 ```
+
+# Autentikacija i Autorizacija u Laravelu
+
+## Što je autentikacija?
+Autentikacija je proces provjere identiteta korisnika - odgovaramo na pitanje "Tko si ti?". U web aplikacijama to najčešće znači provjeru korisničkog imena i lozinke. Nakon uspješne autentikacije, sustav "pamti" da je korisnik prijavljen kroz sesiju.
+
+## Auth "fasada" i helperi
+Laravel nudi Auth "fasadu" i `auth()` helper funkciju za rad s autentikacijom. Ove alate koristimo za provjeru je li korisnik prijavljen, dohvaćanje podataka o korisniku, prijavu i odjavu.
+
+### Osnovne Auth metode
+```php
+use Illuminate\Support\Facades\Auth;
+
+// provjera je li korisnik prijavljen
+if (Auth::check()) {
+    echo "Korisnik je prijavljen!";
+}
+
+// dohvaćanje trenutno prijavljenog korisnika
+$user = Auth::user();
+// ili kraće preko helper funkcije
+$user = auth()->user();
+
+// dohvaćanje ID-ja trenutnog korisnika
+$userId = Auth::id();
+$userId = auth()->id();
+
+// provjera je li korisnik gost (nije prijavljen)
+if (Auth::guest()) {
+    echo "Molimo prijavite se";
+}
+```
+
+## Login/Logout proces
+
+### Ručna prijava korisnika
+```php
+// u LoginController.php
+public function login(Request $request)
+{
+    // validacija podataka
+    $credentials = $request->validate([
+        'email' => ['required', 'email'],
+        'password' => ['required'],
+    ]);
+
+    // pokušaj prijave
+    if (Auth::attempt($credentials)) {
+        // regeneracija sesije (sigurnosna mjera)
+        $request->session()->regenerate();
+        
+        return redirect()->intended('dashboard');
+    }
+
+    // ako prijava nije uspjela
+    return back()->withErrors([
+        'email' => 'Podaci za prijavu nisu ispravni.',
+    ])->onlyInput('email');
+}
+```
+
+### Remember me funkcionalnost
+```php
+// drugi parametar u attempt() je za "remember me"
+if (Auth::attempt($credentials, $request->boolean('remember'))) {
+    // korisnik će ostati prijavljen duže vrijeme
+}
+```
+
+### Odjava korisnika
+```php
+// U LogoutController.php
+public function logout(Request $request)
+{
+    Auth::logout();
+    
+    // invalidacija sesije
+    $request->session()->invalidate();
+    
+    // regeneracija CSRF tokena
+    $request->session()->regenerateToken();
+    
+    return redirect('/');
+}
+```
+
+### Prijava specifičnog korisnika (korisno za testiranje)
+```php
+// prijava User objekta
+$user = User::find(1);
+Auth::login($user);
+
+// prijava prema ID-ju
+Auth::loginUsingId(1);
+
+// prijava samo za ovaj zahtjev (bez sesije)
+Auth::once($credentials);
+```
+
+## Middleware "auth"
+Middleware "auth" automatski provjerava je li korisnik prijavljen prije nego što mu dopusti pristup određenoj ruti ili grupi ruta.
+
+### Korištenje u rutama
+```php
+// routes/web.php
+
+// pojedinačna ruta
+Route::get('/profil', function () {
+    // samo prijavljeni korisnici mogu pristupiti
+    return view('profil');
+})->middleware('auth');
+
+// grupa ruta
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/settings', [SettingsController::class, 'index']);
+    Route::post('/settings', [SettingsController::class, 'update']);
+});
+
+// na kontroleru
+Route::resource('posts', PostController::class)->middleware('auth');
+```
+
+### Korištenje u kontroleru
+```php
+class PostController extends Controller
+{
+    public function __construct()
+    {
+        // zaštiti sve metode
+        $this->middleware('auth');
+        
+        // ili samo specifične metode
+        $this->middleware('auth')->only(['create', 'store', 'edit', 'update']);
+        
+        // sve osim navedenih
+        $this->middleware('auth')->except(['index', 'show']);
+    }
+}
+```
+
+### Preusmjeravanje neprijavljenih korisnika
+Kada neprijavljeni korisnik pokuša pristupiti zaštićenoj ruti, automatski se preusmjerava na login stranicu. Nakon uspješne prijave, vraća se na originalnu stranicu koju je htio posjetiti.
+
+```php
+// možete prilagoditi gdje se korisnik preusmjerava u 
+// app/Http/Middleware/Authenticate.php
+protected function redirectTo($request)
+{
+    if (!$request->expectsJson()) {
+        return route('login');
+    }
+}
+```
+
+## Blade direktive za autentikaciju
+Blade nudi korisne direktive za provjeru statusa autentikacije direktno u pogledima.
+
+```php
+{{-- Prikaži samo prijavljenim korisnicima --}}
+@auth
+    <p>Dobrodošli, {{ auth()->user()->name }}!</p>
+    <form method="POST" action="/logout">
+        @csrf
+        <button type="submit">Odjava</button>
+    </form>
+@endauth
+
+{{-- Prikaži samo gostima (neprijavljenima) --}}
+@guest
+    <a href="/login">Prijavite se</a>
+    <a href="/register">Registrirajte se</a>
+@endguest
+
+{{-- Kombinacija auth i guest --}}
+@auth
+    <li>Moj profil</li>
+    <li>Postavke</li>
+@else
+    <li>Login</li>
+    <li>Registracija</li>
+@endauth
+```
+
+# Autorizacija
+
+## Razlika između autentikacije i autorizacije
+- **Autentikacija** odgovara na pitanje: "Tko si ti?" (provjera identiteta)
+- **Autorizacija** odgovara na pitanje: "Što smiješ raditi?" (provjera dozvola)
+
+Primjer: Svi prijavljeni korisnici su autenticirani, ali samo vlasnik posta smije ga uređivati ili brisati (autorizacija).
+
+## Gates (Vrata)
+Gates su jednostavan način definiranja autorizacijskih pravila. Definiramo ih u `AuthServiceProvider` klasi i koristimo kroz aplikaciju.
+
+### Definiranje Gate-a
+```php
+// app/Providers/AuthServiceProvider.php
+use Illuminate\Support\Facades\Gate;
+use App\Models\Post;
+use App\Models\User;
+
+public function boot()
+{
+    // jednostavan gate - provjerava je li korisnik admin
+    Gate::define('admin-access', function (User $user) {
+        return $user->role === 'admin';
+    });
+    
+    // gate s parametrom - provjerava može li korisnik urediti post
+    Gate::define('edit-post', function (User $user, Post $post) {
+        return $user->id === $post->user_id;
+    });
+    
+    // gate s više uvjeta
+    Gate::define('delete-post', function (User $user, Post $post) {
+        // admin može obrisati bilo koji post
+        if ($user->role === 'admin') {
+            return true;
+        }
+        
+        // vlasnik može obrisati svoj post
+        return $user->id === $post->user_id;
+    });
+}
+```
+
+### Korištenje Gate-a u kontroleru
+```php
+use Illuminate\Support\Facades\Gate;
+
+class PostController extends Controller
+{
+    public function edit(Post $post)
+    {
+        // metoda 1 - provjera s if
+        if (Gate::allows('edit-post', $post)) {
+            return view('posts.edit', compact('post'));
+        }
+        
+        abort(403, 'Nemate dozvolu za uređivanje ovog posta.');
+    }
+    
+    public function update(Request $request, Post $post)
+    {
+        // metoda 2 - direktno odbacivanje ako nema dozvole
+        Gate::authorize('edit-post', $post);
+        
+        // ako je prošlo, nastavi s update logikom
+        $post->update($request->validated());
+        
+        return redirect()->route('posts.show', $post);
+    }
+    
+    public function destroy(Post $post)
+    {
+        // metoda 3 - korištenje deny() za provjeru
+        if (Gate::denies('delete-post', $post)) {
+            abort(403);
+        }
+        
+        $post->delete();
+        return redirect()->route('posts.index');
+    }
+}
+```
+
+### Korištenje Gate-a u Blade pogledima
+```php
+{{-- Prikaži link samo ako korisnik ima dozvolu --}}
+@can('edit-post', $post)
+    <a href="{{ route('posts.edit', $post) }}" class="btn btn-primary">
+        Uredi post
+    </a>
+@endcan
+
+@can('delete-post', $post)
+    <form method="POST" action="{{ route('posts.destroy', $post) }}">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="btn btn-danger">Obriši</button>
+    </form>
+@endcan
+
+{{-- Suprotno od @can --}}
+@cannot('edit-post', $post)
+    <p>Nemate dozvolu za uređivanje ovog posta.</p>
+@endcannot
+
+{{-- Za gate bez parametara --}}
+@can('admin-access')
+    <a href="/admin">Admin panel</a>
+@endcan
+```
+
+## Policies (Politike)
+Policies su klase koje grupiraju autorizacijsku logiku za određeni model. Idealne su kada imate više autorizacijskih pravila za isti resurs.
+
+### Kreiranje Policy klase
+```bash
+# kreiranje policy za Post model
+php artisan make:policy PostPolicy --model=Post
+```
+
+### Definiranje Policy metoda
+```php
+// app/Policies/PostPolicy.php
+namespace App\Policies;
+
+use App\Models\Post;
+use App\Models\User;
+
+class PostPolicy
+{
+    // može li korisnik vidjeti sve postove
+    public function viewAny(User $user): bool
+    {
+        // svi prijavljeni korisnici mogu vidjeti listu
+        return true;
+    }
+
+    // može li korisnik vidjeti specifičan post
+    public function view(User $user, Post $post): bool
+    {
+        // svi mogu vidjeti objavljene, samo autor može vidjeti draftove
+        return $post->published || $user->id === $post->user_id;
+    }
+
+    // može li korisnik kreirati post
+    public function create(User $user): bool
+    {
+        // samo verificirani korisnici
+        return $user->email_verified_at !== null;
+    }
+
+    // može li korisnik urediti post
+    public function update(User $user, Post $post): bool
+    {
+        // samo vlasnik može urediti post
+        return $user->id === $post->user_id;
+    }
+
+    // može li korisnik obrisati post
+    public function delete(User $user, Post $post): bool
+    {
+        // vlasnik ili admin
+        return $user->id === $post->user_id || $user->role === 'admin';
+    }
+    
+    // "Super admin" provjera - ako vrati true, sve ostale metode se preskaču
+    public function before(User $user): bool|null
+    {
+        if ($user->role === 'super-admin') {
+            return true;
+        }
+        
+        return null; // nastavi s normalnom provjerom
+    }
+}
+```
+
+### Registriranje Policy
+Laravel automatski povezuje Policy s modelom ako slijede konvenciju imenovanja. Ako ne, ručno ih registrirajte:
+
+```php
+// app/Providers/AuthServiceProvider.php
+protected $policies = [
+    Post::class => PostPolicy::class,
+];
+```
+
+### Korištenje Policy u kontroleru
+```php
+class PostController extends Controller
+{
+    public function index()
+    {
+        // provjeri može li vidjeti sve
+        $this->authorize('viewAny', Post::class);
+        
+        return view('posts.index', [
+            'posts' => Post::all()
+        ]);
+    }
+    
+    public function show(Post $post)
+    {
+        // provjeri može li vidjeti ovaj post
+        $this->authorize('view', $post);
+        
+        return view('posts.show', compact('post'));
+    }
+    
+    public function create()
+    {
+        // provjeri može li kreirati
+        $this->authorize('create', Post::class);
+        
+        return view('posts.create');
+    }
+    
+    public function edit(Post $post)
+    {
+        // provjeri može li urediti
+        $this->authorize('update', $post);
+        
+        return view('posts.edit', compact('post'));
+    }
+    
+    public function destroy(Post $post)
+    {
+        // provjeri može li obrisati
+        $this->authorize('delete', $post);
+        
+        $post->delete();
+        
+        return redirect()->route('posts.index');
+    }
+}
+```
+
+### Korištenje Policy u Blade pogledima
+```php
+{{-- @can direktiva automatski koristi policy --}}
+@can('create', App\Models\Post::class)
+    <a href="{{ route('posts.create') }}">Novi post</a>
+@endcan
+
+@can('update', $post)
+    <a href="{{ route('posts.edit', $post) }}">Uredi</a>
+@endcan
+
+@can('delete', $post)
+    <form method="POST" action="{{ route('posts.destroy', $post) }}">
+        @csrf
+        @method('DELETE')
+        <button type="submit">Obriši</button>
+    </form>
+@endcan
+
+{{-- možete provjeriti više dozvola odjednom --}}
+@canany(['update', 'delete'], $post)
+    <div class="admin-tools">
+        <!-- prikaži admin alate -->
+    </div>
+@endcanany
+```
+
+# Migracije i Seederi
+
+Što su migracije?
+
+Migracije su sustav za kontrolu verzija vaše baze podataka, baš kao što je Git za vaš kod. Umjesto da ručno klikate i stvarate tablice u nekom alatu poput phpMyAdmina, vi sve promjene definirate u PHP datotekama.
+
+One olakšavaju timski rad - kada novi programer dođe na projekt, ne morate mu slati SQL datoteku. On samo preuzme kod s Gita, pokrene jednu naredbu i migracije automatski izgrade identičnu strukturu baze podataka kakvu ima i ostatak tima.
+
+## Kreiranje migracije
+Sve se radi putem artisan naredbi.
+
+`php artisan make:migration create_posts_table`
+
+Laravel nam nudi korisne prečace:
+
+`--create=users` → generira migraciju s kodom za kreiranje nove tablice users
+
+`--table=users` → generira migraciju s kodom za izmjenu postojeće tablice users
+
+`--path=database/migrations/extra` → sprema migraciju u neki drugi folder po vašem izboru
+
+## Struktura migracije
+Svaka migracijska datoteka ima dvije ključne metode: `up()` i `down()`.
+```php
+// database/migrations/2025_08_30_100000_create_posts_table.php
+public function up(): void
+{
+    // ovdje ide kod za primjenu promjene
+    Schema::create('posts', function (Blueprint $table) {
+        $table->id(); // auto-incrementing BigInt primary key
+        $table->string('title');
+        $table->text('content');
+        $table->timestamps(); // kreira created_at i updated_at stupce
+    });
+}
+
+public function down(): void
+{
+    // ovdje ide kod za poništavanje promjene
+    Schema::dropIfExists('posts');
+}
+```
+- `up()` - izvršava se kada pokrenete php artisan migrate
+  - ovdje definirate što želite napraviti (stvoriti tablicu, dodati stupac)
+
+- `down()` - izvršava se kada pokrenete `php artisan migrate:rollback`
+  - ovdje definirate suprotnu operaciju kako biste se mogli vratiti na stanje prije migracije
+
+Redoslijed izvršavanja migracija određuje se vremenom (timestampom) u nazivu datoteke.
+
+## Izmjena postojeće tablice
+Kada koristimo --table opciju, Laravel generira migraciju koja koristi `Schema::table()` umjesto `Schema::create()`. Ovo nam omogućuje dodavanje, izmjenu ili brisanje postojećih stupaca.
+```php
+// migracija generirana s: php artisan make:migration add_is_active_to_users_table --table=users
+
+public function up(): void
+{
+    // koristimo Schema::table() za izmjenu postojeće tablice 'users'
+    Schema::table('users', function (Blueprint $table) {
+        // dodajemo novi boolean stupac 'is_active' nakon stupca 'email'
+        $table->boolean('is_active')->default(true)->after('email');
+    });
+}
+
+public function down(): void
+{
+    Schema::table('users', function (Blueprint $table) {
+        // u 'down' metodi, radimo suprotnu operaciju - brišemo stupac
+        $table->dropColumn('is_active');
+    });
+}
+```
+
+## Pokretanje migracija
+Glavna naredba koju ćete koristiti: `php artisan migrate`
+
+Laravel će provjeriti koje migracije još nisu izvršene i pokrenut će njihove `up()` metode.
+
+## Povratne naredbe (Rollback)
+`migrate:rollback` - poništava zadnju "seriju" (batch) izvršenih migracija
+
+`migrate:reset` - poništava SVE migracije, pokrećući `down()` metodu za svaku
+
+`migrate:refresh` - poništava sve migracije i odmah ih ponovno pokreće
+
+`migrate:fresh` - najčešće korištena naredba u razvoju
+  - ona ne pokreće `down()` metode
+  - ona jednostavno obriše sve tablice iz baze i onda pokrene sve migracije od početka
+  - brža je i čišća
+
+`php artisan migrate:fresh --seed` - nakon što kreira bazu, odmah je i popuni s podacima iz seeder-a
+
+## Schema builder – dodatne mogućnosti
+Provjere:
+
+`Schema::hasTable('users')` - provjerava postoji li tablica
+
+`Schema::hasColumn('users', 'email')` - provjerava postoji li stupac
+
+Indeksi i strani ključevi:
+```php
+$table->string('email')->unique(); // jedinstveni indeks
+$table->index(['state', 'city']); // obični indeks preko više stupaca
+$table->foreign('user_id')->references('id')->on('users'); // strani ključ
+```
+
+Posebne opcije:
+
+`Schema::disableForeignKeyConstraints()` - privremeno isključuje provjeru stranih ključeva, korisno kod brisanja podataka
+
+`Schema::defaultStringLength(191)` - stavlja se u AppServiceProvider i rješava problem s indeksom na starijim verzijama MySQL-a
+
+# Što su Seederi?
+
+Svrha
+  - početni podaci - popunjavanje baze s podacima nužnim za rad aplikacije (npr. popis država, kategorije proizvoda, administratorski korisnik)
+  - testni podaci - generiranje velike količine lažnih podataka (npr. 1000 korisnika, 5000 članaka) kako biste mogli testirati performanse i izgled aplikacije u realnim uvjetima
+
+## Kreiranje Seedera
+`php artisan make:seeder UserSeeder`
+
+- ovo kreira datoteku `database/seeders/UserSeeder.php`
+
+## Struktura Seedera
+```php
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
+class UserSeeder extends Seeder
+{
+    public function run(): void
+    {
+        // koristimo Query Builder za unos osnovnih podataka
+        DB::table('users')->insert([
+            'name' => 'Admin User',
+            'email' => 'admin@example.com',
+            'password' => Hash::make('password'),
+        ]);
+    }
+}
+```
+- unutar `run()` metode pišemo logiku za unos podataka - možemo koristiti Query Builder (`DB::table(...)`) ili Eloquent modele
+
+## Model Factory (Tvornice modela)
+Za generiranje velike količine lažnih podataka, koristimo Factoryje.
+
+Laravel koristi odličan paket Faker za generiranje lažnih podataka.
+```php
+// u database/factories/UserFactory.php (već postoji)
+public function definition(): array
+{
+    return [
+        'name' => fake()->name(),
+        'email' => fake()->unique()->safeEmail(),
+        'email_verified_at' => now(),
+        'password' => static::$password ??= Hash::make('password'),
+        'remember_token' => Str::random(10),
+    ];
+}
+
+// u seederu - kreiraj 10 lažnih korisnika pomoću factoryja
+// ...
+use App\Models\User;
+// ...
+User::factory(10)->create();
+```
+
+## Pokretanje Seedera
+Pokreće SAMO navedeni seeder
+`php artisan db:seed --class=UserSeeder`
+
+Pokreće SVE seeder-e navedene u DatabaseSeeder.php
+`php artisan db:seed`
+
+Glavna datoteka je `database/seeders/DatabaseSeeder.php`. Unutar njene `run()` metode, pozivate ostale seedere koje želite pokrenuti:
+```php
+public function run(): void
+{
+    $this->call([
+        UserSeeder::class,
+        PostSeeder::class,
+    ]);
+}
+```
+
+# Eloquent ORM i Relacije
+
+## Uvod u Eloquent – modeli i osnovne operacije
+
+### ORM i Eloquent
+- **ORM (Object‑Relational Mapping)** - omogućava nam rad s bazom kroz PHP objekte umjesto sirovog SQL‑a (isti koncept dostupan i svim popularnim jezicima)
+- **Eloquent** - Laravelova implementacija ORM‑a - analogija pametnog asistenta za dohvat i manipulaciju podataka
+
+### Kreiranje modela
+```bash
+php artisan make:model Post
+```
+- u Laravelu se modeli po defaultu generiraju u `app/Models/`
+- **Zaštita mass assignment‑a** - modeli su zaštićeni prema defaultu
+    - prije `create()` definiraj `protected $fillable = [...]` ili `protected $guarded = [...]`
+
+### Mass assignment
+Mass assignment ili masovno dodjeljivanje je mogućnost koju nam Eloquent pruža, a služi kako bismo kreirali ili ažurirali model (redak u bazi) slanjem cijelog polja (array) podataka odjednom, umjesto da postavljamo svaku vrijednost pojedinačno.
+
+```php
+// bez mass assignmenta
+$post = new Post;
+$post->title = $request->input('title');
+$post->content = $request->input('content');
+$post->save();
+
+// s mass assignmentom
+Post::create($request->all());
+```
+
+Mass assignment predstavlja sigurnosni rizik jer uopće ne provjerava korisnikov unos i on može u samu formu dodati polja koja mi uopće nismo predvidjeli u toj formi.
+
+Primjer:
+- vi očekujete da će korisnik poslati podatke `['ime' => 'Pero', 'prezime' => 'Perić']`
+- zlonamjeran korisnik će koristeći alate u pregledniku u formu dodati još jedno skriveno polje i poslati vam podatke `['ime' => 'Pero', 'prezime' => 'Perić', 'is_admin' => '1']`
+
+Medutim, Laravel po defaultu zabranjuje mass assignment tako da ako pokušate primjeniti npr. `Post::create($request->all())`, dobit ćete grešku.
+
+Ako želimo omogućiti mass assignment, moramo Laravelu dati do znanja koja polja u modelu su dozvoljena za mass assignment. To radimo pomoću `$fillable` (definira koja su polja dozvoljena za mass assignment) i `$guarded` (definira koja su polja zabranjena za mass assignment) polja u modelu.
+
+```php
+// app/Models/User.php
+class User extends Model
+{
+    protected $fillable = [
+      'ime',
+      'prezime',
+      'email',
+      'password',
+    ];
+
+    protected $guarded = [
+      'is_admin',
+    ];
+}
+```
+
+`$fillable` je sigurniji pristup ("safe by default"). Ako sutra u bazu dodate novi osjetljivi stupac (npr. stanje_racuna) i zaboravite ga dodati na `$guarded` listu, stvorili ste sigurnosni propust. S `$fillable` pristupom, novi stupac automatski nije dozvoljen dok ga vi svjesno ne dodate na listu.
+
+### Napredne konfiguracije modela
+```php
+protected $table = 'my_posts';
+protected $primaryKey = 'post_id';
+public $incrementing = false;
+protected $keyType = 'string';
+public $timestamps = false;
+// ili:
+const CREATED_AT = 'creation_date';
+const UPDATED_AT = 'last_changed';
+use HasUuids;
+use HasUlids;
+```
+`protected $table = 'my_posts';`
+- Laravelova pretpostavka - ako se vaš model zove Post, Laravel pretpostavlja da se tablica u bazi zove posts (množina, mala slova, tzv. "snake_case")
+- zašto biste ovo mijenjali? Zato što vaša postojeća tablica u bazi možda ima drugačije ime, npr. naslijedili ste stari projekt i tablica se zove my_posts ili tbl_postovi. Ovom linijom vi eksplicitno kažete Eloquentu: "Zanemari svoje pravilo, tablica za ovaj model se zove 'my_posts'."
+
+`protected $primaryKey = 'post_id';`
+- Laravelova pretpostavka - svaka tablica ima primarni ključ (identifikator) koji se zove id
+- zašto biste ovo mijenjali? Vaš primarni ključ u tablici se možda zove post_id, PostID ili nešto treće. Ovom linijom govorite Eloquentu koji stupac treba koristiti kao jedinstveni identifikator
+
+`public $incrementing = false; i protected $keyType = 'string';` (ove dvije linije idu zajedno)
+- Laravelova pretpostavka - primarni ključ (id) je broj (integer) koji se automatski povećava (1, 2, 3, 4...)
+- zašto biste ovo mijenjali? Ponekad ne želite koristiti brojeve kao ID. Moderni pristup je često korištenje UUID-a (Universally Unique Identifier). To je dugačak, nasumičan string poput a1b2c3d4-e5f6-7890-1234-567890abcdef
+- ako vaš primarni ključ nije broj koji se povećava, morate reći Laravelu:
+    - `public $incrementing = false;` - "Nemoj pokušavati povećavati ovaj ključ jer nije broj!"
+    - `protected $keyType = 'string';` - "Ovaj ključ je tipa string."
+
+`public $timestamps = false;`
+- Laravelova pretpostavka - vaša tablica ima dva posebna stupca: `created_at` i `updated_at` - Laravel će automatski popunjavati i ažurirati te stupce svaki put kad kreirate ili izmijenite redak
+- zašto biste ovo mijenjali? Možda imate tablicu u koju samo upisujete podatke koji se nikad ne mijenjaju (npr. popis država) i vremenske oznake vam jednostavno ne trebaju. Ovom linijom kažete Eloquentu: "Nemoj se brinuti oko created_at i updated_at stupaca za ovaj model, oni ne postoje."
+
+`const CREATED_AT = '...';` i `const UPDATED_AT = '...';`
+- Laravelova pretpostavka - stupci za vremenske oznake se zovu točno `created_at` i `updated_at`
+- zašto biste ovo mijenjali? U vašoj postojećoj bazi, ti stupci se možda zovu `creation_date` i `last_changed`. Ovim konstantama vi samo preslikavate Laravelova interna imena na stvarna imena stupaca u vašoj tablici
+
+`use HasUuids;`
+- ovo je moderan i elegantan prečac koji zamjenjuje neke od gornjih postavki
+- ovo su tzv. traitovi - kada dodate `use HasUuids;` na vrh svog modela, Laravel će automatski napraviti nekoliko stvari za vas:
+    - postavit će `$incrementing = false;`
+    - postavit će `$keyType = 'string';`
+- svaki put kad budete kreirali novi model - `Post::create(...)`, Laravel će automatski generirati novi UUID i spremiti ga kao primarni ključ
+
+`use HasUlids;`
+- ne morate se više brinuti o ručnom generiranju ID-jeva. HasUlids radi sličnu stvar kao HasUuids, samo generira ULID-ove, koji su slični UUID-ovima ali se mogu sortirati po vremenu
+
+Zaključak: sva ova svojstva služe da biste preformulirali Laravelove zadane pretpostavke i prilagodili svoj Eloquent model točnoj strukturi vaše tablice u bazi podataka, pogotovo kada radite s bazama koje niste vi originalno dizajnirali.
+
+### CRUD operacije
+```php
+Post::create([...]); // zahtijeva fillable/guarded
+$post = Post::find(1);
+$post = Post::findOrFail(1);
+$post->title = 'Novi';
+$post->save();
+$post->delete();
+Post::updateOrCreate(['id'=>1], ['title'=>'...', 'author' => '...']);
+```
+- `updateOrCreate()` - prima dva niza - kriterij i vrijednosti
+- `findOrFail()` - baca 404 ako model nije pronađen
+
+#### Kreiranje (Create)
+- prvi način - `new` i `save()`
+```php
+$post = new Post;
+$post->title = 'Moj prvi članak';
+$post->content = 'Ovo je sadržaj...';
+$post->save(); // Sprema u bazu
+```
+- drugi način - `create()` (mass assignment)
+```php
+// Zahtijeva da su 'title' i 'content' u $fillable polju
+$post = Post::create([
+    'title' => 'Moj drugi članak',
+    'content' => 'Novi sadržaj...'
+]);
+```
+
+#### Čitanje (Read)
+Ovdje Eloquent najviše sjaji.
+- dohvaćanje jednog modela
+```php
+// pronađi post po primarnom ključu (npr. id = 1)
+$post = Post::find(1);
+
+// isto kao find(), ali baci 404 grešku ako post ne postoji (idealno za kontrolere)
+$post = Post::findOrFail(1);
+
+// pronađi prvi post koji zadovoljava uvjet
+$post = Post::where('is_published', true)->first();
+```
+
+- dohvaćanje više modela (kolekcije)
+    - kada dohvatimo više modela, dobijemo poseban objekt - kolekciju - to je "super-niz" s puno korisnih metoda
+```php
+// dohvati SVE postove
+$posts = Post::all();
+
+// dohvati sve objavljene postove, sortirane po datumu
+$posts = Post::where('is_published', true)
+               ->orderBy('created_at', 'desc')
+               ->get();
+
+// dohvati 5 najnovijih postova
+$latestPosts = Post::latest()->take(5)->get();
+
+// dohvati postove čiji je autor 'Pero' ili 'Ana'
+$posts = Post::whereIn('author', ['Pero', 'Ana'])->get();
+```
+
+- agregati
+```php
+$brojPostova = Post::count();
+$najveciBrojPregleda = Post::max('views');
+```
+
+#### Ažuriranje (Update)
+- prvi način - `find()` i `save()`
+```php
+$post = Post::findOrFail(1);
+$post->title = 'Novi ažurirani naslov';
+$post->save();
+```
+
+- drugi način - `update()` (mass assignment)
+```php
+$post = Post::findOrFail(1);
+$post->update(['title' => 'Još noviji naslov']); // zahtijeva $fillable
+```
+
+- masovno ažuriranje - možemo ažurirati više redaka odjednom
+```php
+// objavimo sve postove koji su u statusu 'draft'
+Post::where('status', 'draft')->update(['status' => 'published']);
+```
+
+- `updateOrCreate()` - izuzetno korisna metoda koja ili ažurira postojeći zapis ili kreira novi ako ne postoji
+```php
+// ako postoji post s naslovom 'Uvod', ažuriraj mu content
+// ako ne postoji, kreiraj novi post s oba podatka
+Post::updateOrCreate(
+    ['title' => 'Uvod'],
+    ['content' => 'Novi uvodni sadržaj...']
+);
+```
+#### Brisanje (Delete)
+- brisanje 1 modela
+```php
+$post = Post::findOrFail(1);
+$post->delete();
+```
+
+- brisanje po ključu
+```php
+// obriši post s ID-om 1
+Post::destroy(1);
+
+// obriši više postova
+Post::destroy(1, 2, 3);
+```
+
+- masovno brisanje
+```php
+// obriši sve neobjavljene postove starije od godinu dana
+Post::where('is_published', false)
+      ->where('created_at', '<', now()->subYear())
+      ->delete();
+```
+
+### Kolekcije, chunking i cursors
+- `Post::all()` ili `Post::where(...)->get()` vraća `Illuminate\Database\Eloquent\Collection` – moćan skup metoda
+    - ta "kolekcija" dolazi s desecima super korisnih metoda koje vam omogućuju da elegantno manipulirate podacima nakon što ste ih dohvatili iz baze
+```php
+->filter() // filtriraj elemente
+
+->map() // primijeni funkciju na svaki element
+
+->pluck('title') // izvuci samo vrijednosti iz 'title' stupca
+
+->sum('views') // zbroji sve preglede
+
+->groupBy('author') // grupiraj postove po autoru
+```
+
+- `->chunk(200, fn($chunk) => ...)` - rješava problem memorije tako da dohvaća podatke iz baze u manjim "komadima" (chunks)
+    - primjer: Umjesto da pokušate odjednom iznijeti 500,000 cigli iz kamiona, vi ih prenosite u kolicima, 200 po 200. Nakon što obradite jednu turu, vraćate se po sljedeću
+```php
+Post::chunk(200, function ($chunkOfPosts) {
+    foreach ($chunkOfPosts as $post) {
+      // obavi neku operaciju na svakom postu
+    }
+});
+```
+
+- Laravel će iz baze dohvatiti prvih 200 postova
+- izvršit će vašu funkciju (closure) s tih 200 postova
+- nakon što funkcija završi, Laravel "zaboravlja" tih 200 postova i oslobađa memoriju
+- zatim se vraća u bazu i dohvaća sljedećih 200 postova (od 201 do 400)
+- ponavlja proces sve dok ne prođe kroz sve postove
+- ključna prednost - u bilo kojem trenutku, u memoriji imate samo 200 postova, a ne 500,000
+- mana - izvršava više upita prema bazi (jedan za svaki "chunk")
+
+
+`->cursor()` - obrada 1 po 1
+- još efikasnija po pitanju memorije
+
+- primjer: umjesto da koristite kolica (chunk) za cigle, vi ste na pokretnoj traci. Traka vam donosi jednu po jednu ciglu. Vi uzmete ciglu, obradite je i stavite sa strane. U ruci nikada nemate više od jedne cigle.
+```php
+foreach (Post::cursor() as $post) {
+    // obavi neku operaciju na ovom jednom postu
+}
+```
+- Laravel izvrši samo jedan upit prema bazi podataka
+- ali, umjesto da sve rezultate odmah učita u PHP, on koristi mehanizam baze podataka koji mu omogućuje da iterira kroz rezultate jedan po jedan, bez da ih sve drži u memoriji
+- ključna prednost - ovo je najštedljiviji način za rad s ogromnim skupovima podataka jer u memoriji imate samo jedan model u bilo kojem trenutku
+- idealno za zadatke poput eksportiranja milijuna redaka u CSV datoteku
+
+### Eloquent događaji
+Eloquent događaji (events) su "kuke" ili "okidači" (eng. hooks) koji vam omogućuju da automatski izvršite neki kod u ključnim trenucima životnog ciklusa jednog modela.
+
+To metode poput `creating`, `updating`, `saving`, `deleting` koje mogu presresti akcije na modelima.
+
+Primjer: zamislite da imate pametnu kuću. Možete postaviti pravila: "TOČNO PRIJE nego što se ulazna vrata zaključaju, provjeri jesu li svi prozori zatvoreni." ili "ODMAH NAKON što se alarm upali, pošalji mi notifikaciju na mobitel."
+
+Eloquent događaji rade na isti način. Vi postavljate "pravila" koja se izvršavaju prije ili poslije neke akcije u bazi podataka.
+
+Najčešće se definiraju unutar booted metode samog modela. Laravel će automatski pozvati ovu metodu kada se model prvi put koristi.
+
+#### Najvažniji događaji i njihova svrha
+Postoji razlika između događaja koji završavaju na `-ing` (izvršavaju se PRIJE akcije) i onih koji završavaju na `-ed` (izvršavaju se NAKON akcije).
+
+`creating / created`
+- creating - okida se prije nego što se novi model spremi u bazu
+    - idealno za postavljanje zadanih vrijednosti, generiranje slugova, UUID-ova itd.
+- created - okida se nakon što je novi model spremljen u bazu
+    - idealno za slanje notifikacija, logiranje aktivnosti, itd.
+
+`updating / updated`
+- updating - okida se prije nego što se postojeći model ažurira
+- updated - okida se nakon što je model ažuriran
+
+`saving / saved`
+- ovo su općeniti događaji - saving se okida prije spremanja (i za kreiranje i za ažuriranje), a saved se okida nakon
+
+`deleting / deleted`
+- deleting - okida se prije nego što se model obriše - savršeno mjesto za brisanje povezanih datoteka (npr. korisnikovog avatara iz storage direktorija)
+- deleted - okida se nakon što je model obrisan
+
+```php
+// app/Models/Post.php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str; // potrebno za rad sa stringovima
+
+class Post extends Model
+{
+    protected $fillable = ['title', 'content', 'slug'];
+
+    protected static function booted(): void
+    {
+        // postavi događaj koji će se izvršiti TOČNO PRIJE kreiranja novog posta
+        static::creating(function (Post $post) {
+            // generiraj slug iz naslova
+            $post->slug = Str::slug($post->title);
+        });
+    }
+}
+```
+
+- kada u svom kodu napišete: `Post::create(['title' => 'Moj Novi Super Članak', 'content' => '...'])`, Eloquent pokrene proces kreiranja
+- PRIJE nego što pošalje INSERT naredbu u bazu, on vidi da postoji creating događaj
+- izvrši kod unutar te funkcije -> uzme naslov "Moj Novi Super Članak", pretvori ga u "moj-novi-super-clanak" i postavi ga kao vrijednost slug svojstva
+- tek tada spremi model u bazu s popunjenim i title i slug poljem
+- sve je potpuno automatizirano, a naši kontroleri ostaju čisti i ne moraju se brinuti o generiranju slugova
+
+## Relacije među modelima
+Relacije u Eloquentu su način na koji "učimo" naše modele kako su međusobno povezani. To nam omogućuje da pišemo čist i čitljiv kod za dohvaćanje povezanih podataka.
+
+### Tipovi relacija 
+
+**One-to-One (hasOne/belongsTo)**  
+- svaki korisnik ima točno jedan profil
+- (User -> hasOne -> Profile)
+- svaki profil pripada točno jednom korisniku (Profile -> belongsTo -> User)
+
+**One-to-Many (hasMany/belongsTo)**
+- jedan autor (User) može imati više postova (User -> hasMany -> Post)
+- svaki post pripada točno jednom autoru (Post -> belongsTo -> User)
+- ovo je najčešći tip relacije
+
+**Many-to-Many (belongsToMany)**
+- jedan članak (Post) može imati više tagova (npr. 'tehnologija', 'laravel')
+- jedan tag može biti dodijeljen na više članaka
+- za ovo je potrebna treća, pomoćna tablica (tzv. "pivot" tablica, npr. post_tag)
+
+**HasOneThrough / HasManyThrough**
+- omogućuje definiranje relacije "kroz" neki drugi model
+- primjer - država ima mnogo postova kroz svoje korisnike (Country -> hasManyThrough -> Post -> through -> User)
+
+**Polymorphic (morphOne, morphMany, morphToMany)**
+- napredna relacija koja omogućuje da jedan model pripada više od jednom drugom modelu, koristeći jednu vezu -> primjer: i članci (Post) i slike (Image) mogu imati komentare
+    - umjesto da kreirate dvije tablice za komentare, imate jednu koja se može vezati za oba modela
+
+Primjer one-to-one relacije
+```php
+// unutar app/Models/User.php
+public function profile() {
+    return $this->hasOne(Profile::class);
+}
+
+// unutar app/Models/Profile.php
+public function user() {
+    return $this->belongsTo(User::class);
+}
+```
+
+- `hasOne(Profile::class)` - ovime govorite: "Jedan User ima jedan Profile"
+- Laravel će automatski pretpostaviti da u profiles tablici postoji stupac user_id koji služi kao strani ključ
+
+- `belongsTo(User::class)` - ovo je inverzna strana relacije i njome govorite: "Ovaj Profile pripada jednom User-u"
+
+- korištenje: sada možete pisati kod poput `$user->profile->phone_number` ili `$profile->user->email`
+
+Što radi `withDefault()`?
+- ako pokušate pristupiti `$user->profile->phone_number`, a korisnik nema kreiran profil (relacija vrati null), dobit ćete grešku
+- `withDefault()` rješava taj problem tako da vraća prazan "dummy" model umjesto null
+- `return $this->hasOne(Profile::class)->withDefault();`
+    - sada, ako korisnik nema profil, `$user->profile` će biti prazan Profile objekt i nećete dobiti grešku, već prazan string
+
+### Definiranje relacija
+```php
+// User.php
+public function profile() { return $this->hasOne(Profile::class); }
+
+// Profile.php
+public function user() { return $this->belongsTo(User::class); }
+```
+- može se koristiti i `withDefault()` za null-safe relacije
+
+### Prilagođeni ključevi
+Laravel se oslanja na konvencije (npr. da se strani ključ zove user_id). Ako vaša baza ne prati te konvencije, možete ih eksplicitno navesti.
+
+```php
+// unutar modela Post.php, ako želimo dohvatiti autora
+return $this->belongsTo(User::class, 'author_id', 'uuid');
+```
+Ovdje metodi `belongsTo` dajemo dodatne argumente:
+- `User::class` - model s kojim se povezujemo
+- `author_id` - ime stranog ključa u našoj (posts) tablici -> Laravel bi inače tražio `user_id`
+- `uuid` - ime primarnog ključa u drugoj (`users`) tablici -> Laravel bi inače tražio `id`
+
+### Eager Loading i withCount()
+#### Problem N+1 upita i rješenje `with()` (Eager Loading)
+Zamislimo da imate 100 postova i želite prikazati naslov svakog posta i ime njegovog autora.
+
+-> loš način (bez Eager Loadinga)
+```php
+$posts = Post::all(); // 1 upit za sve postove
+foreach ($posts as $post) {
+    echo $post->user->name; // 1 upit za SVAKI post da se dohvati autor
+}
+// ukupno: 1 + 100 = 101 upit - ovo je jako sporo
+```
+
+-> dobar način (`with()` - Eager Loading)
+```php
+$posts = Post::with('user')->get(); // 2 upita ukupno
+foreach ($posts as $post) {
+    echo $post->user->name; // nema novih upita, autor je već dohvaćen
+}
+```
+- `with('user')` kaže Eloquentu - "Hej, kada budeš dohvatio postove, odmah nakon toga jednim dodatnim upitom dohvati i sve njihove autore." - time se broj upita drastično smanjuje
+
+Što je `withCount()`?
+
+Ponekad nam ne trebaju svi povezani modeli, već samo njihov broj
+- `$users = User::withCount('posts')->get();`
+  - ovo će dohvatiti sve korisnike i svaki korisnik će imati dodatno svojstvo `posts_count` s brojem njegovih postova
+  - to je puno brže nego da za svakog korisnika dohvaćamo sve postove pa onda brojimo
+
+# Query Builder i DB klasa
+**Query Builder** - omogućuje gradnju SQL upita pomoću fluent PHP metoda
+  - direktniji od Eloquenta, ali sigurniji od sirovog SQL-a
+    - **analogija** -> Eloquent je pametni asistent, Query Builder je set preciznih alata
+  - koristi se za kompleksne upite, agregacije, ili kada nisu potrebni Eloquent modeli
+
+Početak rada – DB fasada
+```php
+use Illuminate\Support\Facades\DB;
+
+$users = DB::table('users')->get();
+foreach ($users as $user) {
+    echo $user->name;
+}
+```
+
+```php
+$user = DB::table('users')->find(1);
+$user = DB::table('users')->where('name', 'Pero')->first();
+```
+- vraća **stdClass objekte**, ne Eloquent modele
+
+### Razlika stdClass objekta i Eloquent modela
+```php
+// s Eloquentom
+$eloquentPost = Post::find(1);
+echo $eloquentPost->user->name; // radi
+$eloquentPost->title = 'Novi naslov';
+$eloquentPost->save(); // radi
+
+// s Query Builderom
+$stdClassPost = DB::table('posts')->find(1);
+echo $stdClassPost->title; // radi čitanje podataka
+
+echo $stdClassPost->user->name; // GREŠKA! stdClass nema 'user' relaciju
+$stdClassPost->save(); // GREŠKA! stdClass nema 'save' metodu
+```
+- Eloquent model (npr. objekt Post)
+  - kada koristite Eloquent, npr. `Post::find(1)`, dobijete objekt koji je instanca vaše klase `App\Models\Post` - taj objekt je "pametan" i "živ"
+  - zna tko je - predstavlja točno jedan redak u tablici posts
+  - ima sposobnosti (metode) - na njemu možete pozvati metode poput `$post->save()`, `$post->delete()`, ili bilo koju custom metodu koju ste vi definirali unutar Post klase
+  - zna svoje relacije - ako ste definirali relaciju, možete jednostavno napisati `$post->user` da dohvatite autora ili `$post->comments` da dohvatite sve komentare
+
+- stdClass objekt
+  - kada koristite Query Builder, npr. `DB::table('posts')->find(1)`, dobijete generički stdClass objekt -> to je najjednostavniji mogući objekt u PHP-u -> on je "glup" i pasivan
+  - zna tko je - sadrži podatke iz jednog retka tablice kao svoja javna svojstva (npr. `$post->title`)
+  - nema sposobnosti - na njemu ne možete pozvati metode poput `save()` ili `delete()` jer on ne zna kako komunicirati s bazom
+  - ne zna svoje relacije - ne možete pozvati `$post->user` jer on nema pojma o relacijama koje ste definirali u Eloquent modelu
+
+### Građenje upita (method chaining)
+
+```php
+$products = DB::table('products')
+  ->where('is_available', true)
+  ->where('price', '<', 50)
+  ->orderBy('name', 'asc')
+  ->get();
+```
+Što se dešava - korak po korak:
+1. `DB::table('products') -> SELECT * FROM products`
+2. `->where('is_available', true)` = `SELECT * FROM products WHERE is_available = true`
+3. `->where('price', '<', 50)` = `SELECT * FROM products WHERE is_available = true AND price < 50`
+4. `->orderBy('name', 'asc')` = `SELECT * FROM products WHERE is_available = true AND price < 50 ORDER BY name ASC`
+5. `->get()` = "ok, sad izvrši ovaj sastavljeni upit i daj mi rezultate."
+
+- svaka metoda dodaje jedan dio u konačni SQL upit, a `get()` (ili `first()`, `find()`, `count()` itd.) je "okidač" koji ga izvršava
+- ovo je puno sigurnije od pisanja sirovog SQL-a jer Laravel automatski štiti od SQL Injection napada
+
+## Proširene mogućnosti
+
+### Osnovni alati (must know)
+Ovo je set alata koji ćete koristiti u 80% svog rada.
+
+- `select()` - bira koje "stupce" iz tablice želite dohvatiti - ako se ne navede, dohvaćaju se svi (*)
+```php
+// dohvati samo ime i email svih korisnika
+$users = DB::table('users')->select('name', 'email')->get();
+```
+- `where()` - "filter" za retke koji postavlja jedan uvjet
+```php
+// dohvati sve proizvode čija je cijena manja od 100
+$products = DB::table('products')->where('price', '<', 100)->get();
+```
+- `orderBy()` - definira po kojem stupcu i u kojem smjeru (rastuće asc ili padajuće desc) želite poredati rezultate
+```php
+// dohvati sve korisnike poredane po imenu, abecednim redom
+$users = DB::table('users')->orderBy('name', 'asc')->get();
+```
+- `limit()` - ograničava broj redaka koje želite dohvatiti
+```php
+// dohvati samo 5 najnovijih postova
+$posts = DB::table('posts')->orderBy('created_at', 'desc')->limit(5)->get();
+```
+- `offset()` - govori upitu koliko redaka na početku treba preskočiti - koristi se npr. za paginaciju
+```php
+// prikaz druge stranice rezultata, ako je na stranici 10 itema (preskoči prvih 10)
+$users = DB::table('users')->offset(10)->limit(10)->get();
+```
+- `first()` - dohvaća samo prvi redak koji zadovoljava sve prethodne uvjete i vraća jedan stdClass objekt ili null
+```php
+// dohvati prvog registriranog korisnika
+$user = DB::table('users')->orderBy('created_at', 'asc')->first();
+```
+- `find()` - prečac za dohvaćanje jednog retka po njegovom primarnom ključu (id)
+```php
+// dohvati korisnika s ID-om 5
+$user = DB::table('users')->find(5);
+```
+- `insert()` - umeće jedan ili više novih redaka u bazu
+```php
+// umetni novog korisnika
+DB::table('users')->insert(['email' => 'pero@peric.com', 'name' => 'Pero']);
+```
+- `update()` - ažurira retke koji zadovoljavaju where uvjet
+```php
+// ažuriraj ime korisnika s ID-om 5
+DB::table('users')->where('id', 5)->update(['name' => 'Novi Pero']);
+```
+- `delete()` - briše retke koji zadovoljavaju where uvjet
+```php
+// obriši korisnika s ID-om 5
+DB::table('users')->where('id', 5)->delete();
+```
+- `count()` - najčešća agregacija, vraća ukupan broj redaka koji zadovoljavaju uvjete
+```php
+// prebroji koliko ima aktivnih korisnika
+$activeUsers = DB::table('users')->where('active', 1)->count();
+```
+
+### Često korišteni specijalizirani alati (nice to have)
+Ovo su metode koje rješavaju vrlo česte, specifične probleme i čine kod puno čišćim.
+
+- `join()` - vraća samo retke koji imaju par u obje tablice
+- `leftJoin()` - vraća sve retke iz prve (lijeve) tablice, bez obzira imaju li par u drugoj
+```php
+// dohvati sve postove i ime autora svakog posta
+$posts = DB::table('posts')
+    ->join('users', 'posts.user_id', '=', 'users.id')
+    ->select('posts.title', 'users.name as author_name')
+    ->get();
+```
+- `whereBetween()` - dohvaća retke gdje je vrijednost stupca unutar zadanog raspona
+```php
+// dohvati sve narudžbe napravljene u lipnju
+$orders = DB::table('orders')
+    ->whereBetween('created_at', ['2024-06-01', '2024-06-30'])
+    ->get();
+```
+- `whereIn()` - dohvaća retke gdje vrijednost stupca odgovara bilo kojoj vrijednosti iz zadanog niza
+```php
+// dohvati korisnike s ID-evima 1, 5 i 10
+$users = DB::table('users')->whereIn('id', [1, 5, 10])->get();
+```
+- `whereNull()` - dohvaća retke gdje je vrijednost zadanog stupca null
+- `whereNotNull()` - radi suprotno od `whereNull()`
+```php
+// dohvati sve korisnike koji nisu "soft-deleted"
+$users = DB::table('users')->whereNull('deleted_at')->get();
+```
+- `pluck('name')` - dohvaća sve vrijednosti iz samo jednog stupca i vraća ih kao jednostavan, indeksirani niz
+```php
+// dohvati listu svih email adresa korisnika
+$emails = DB::table('users')->pluck('email');
+```
+- `value('email')` - dohvaća jednu jedinu vrijednost iz prvog retka koji zadovoljava uvjet
+```php
+// dohvati email adresu korisnika s ID-om 5
+$email = DB::table('users')->where('id', 5)->value('email');
+```
+- `when()` - uvjetno dodaje klauzule u upit, čime se izbjegavaju neuredne if petlje
+```php
+$isAdmin = true;
+$users = DB::table('users')
+    ->when($isAdmin, function ($query) {
+        // ovaj dio će se dodati samo ako je $isAdmin true
+        $query->where('role', 'admin');
+    })
+    ->get();
+```
+
+### Napredni alati za posebne slučajeve (možda nekad zatreba)
+Ovo su alati koje nećete koristiti svaki dan, ali je dobro znati da postoje za rješavanje specifičnih problema.
+
+- `selectRaw()` - omogućuje pisanje sirovog SQL-a unutar select dijela upita -> koristiti oprezno i s ? placeholderima za zaštitu!!
+```php
+// dohvati cijenu s uračunatim PDV-om
+$products = DB::table('products')
+    ->selectRaw('price * 1.25 as price_with_vat')
+    ->get();
+```
+- `groupBy()` i `having()` - koriste se za agregaciju i izvještaje
+  - groupBy grupira retke
+  - having filtrira rezultate nakon grupiranja
+```php
+// dohvati sve gradove koji imaju više od 10 korisnika
+$cities = DB::table('users')
+    ->select('city', DB::raw('count(*) as user_count'))
+    ->groupBy('city')
+    ->having('user_count', '>', 10)
+    ->get();
+```
+- `upsert()` i `updateOrInsert()` - "Update or Insert" operacije
+- `updateOrInsert()` - Pponalazi jedan redak po uvjetu i ažurira ga, ili ga kreira ako ne postoji
+```php
+// ažuriraj korisnika 'pero@peric.com' ili ga kreiraj ako ne postoji
+DB::table('users')->updateOrInsert(
+    ['email' => 'pero@peric.com'],
+    ['name' => 'Pero']
+);
+```
+- `upsert()` - radi istu stvar ali za više redaka odjednom, što je puno efikasnije
+
+- `chunk()` i `lazy()` - koriste se za obradu ogromnih količina podataka bez da se sruši memorija servera
+- `chunk()` dohvaća podatke u "komadima"
+- `lazy()` dohvaća jedan po jedan podatak
+```php
+// prođi kroz sve korisnike u serijama od 100
+DB::table('users')->orderBy('id')->chunk(100, function ($users) {
+    foreach ($users as $user) {
+        // obradi korisnika
+    }
+});
+```
+- `lockForUpdate()` (pessimistic locking) - "zaključava" odabrane retke unutar transakcije, sprječavajući druge procese da ih mijenjaju dok vi ne završite
+```php
+// osiguraj da nitko ne može promijeniti stanje zaliha dok mi radimo narudžbu
+DB::transaction(function () {
+    $product = DB::table('products')->where('id', 1)->lockForUpdate()->first();
+    // provjeri zalihe i ažuriraj
+});
+```
+- Debugging (`dd()`, `dump()`, `ddRawSql()`) - izuzetno korisni alati za provjeru SQL upita koji se generira
+
+- `dd()` - ispisuje generirani upit i podatke te zaustavlja izvršavanje skripte
+- `dump()` - radi isto, ali ne zaustavlja izvršavanje
+- `ddRawSql()` - ispisuje "sirovi" SQL upit sa svim vrijednostima na pravim mjestima
+```php
+// pogledaj koji se točno SQL generira prije nego se izvrši
+DB::table('users')->where('id', 1)->dd();
+```
+
+### Sigurnost
+Zaštita od SQL Injectiona (PDO Binding) - Query Builder automatski štiti vaše upite. On odvaja strukturu upita od podataka koje šalje korisnik, sprječavajući zlonamjerne korisnike da "ubrizgaju" maliciozni kod.
+```php
+// sigurno - Laravel ovo pretvara u siguran upit s placeholderima
+$email = $request->input('email');
+DB::table('users')->where('email', $email)->get();
+```
+
+Imena stupaca se ne mogu "bindati" - zaštita se odnosi samo na vrijednosti, ne i na imena stupaca (npr. u orderBy). Nikada ne prosljeđujte direktan unos korisnika u te metode.
+```php
+// sigurno rješenje (whitelist)
+$sortByInput = $request->input('sort_by'); // npr. 'name'
+$allowed = ['name', 'email']; // dozvoljeni stupci
+
+if (in_array($sortByInput, $allowed)) {
+    DB::table('users')->orderBy($sortByInput)->get();
+}
+```
+
+# Testiranje u Laravelu
+Zašto testiramo? Ručno testiranje je sporo i nepouzdano - klikanje kroz cijelu aplikaciju nakon svake male promjene je nepraktično i podložno ljudskim greškama.
+
+- zaštita od regresija - automatizirani testovi su vaša "sigurnosna mreža" tj. oni osiguravaju da nova funkcionalnost nije pokvarila neku staru
+
+- Unit testovi - testiraju jedan mali, izolirani dio koda (jednu metodu ili klasu) bez ostatka aplikacije
+
+- Feature (HTTP) testovi - testiraju jednu funkcionalnost iz perspektive korisnika, simulirajući cijeli zahtjev kroz aplikaciju
+
+## Ugrađeno testno okruženje
+Laravel koristi PHPUnit (ili Pest) kao temelj za testiranje.
+Testovi se nalaze u `tests/Unit` i `tests/Feature` direktorijima.
+
+- `.env.testing` - ako ova datoteka postoji, Laravel će je automatski koristiti prilikom pokretanja testova
+  - to vam omogućuje da za testove koristite potpuno odvojenu bazu podataka (npr. u memoriji - SQLite) i tako sačuvate svoje stvarne podatke
+
+- session i cache driveri (array) - tijekom testiranja, Laravel automatski postavlja drivere za sesiju i cache na array, što znači da se ti podaci ne zapisuju na disk, već se čuvaju u memoriji
+  - to čini testove drastično bržima
+
+## Paralelizacija i performanse
+- zahtijeva composer require brianium/paratest --dev
+- pokretanje: `php artisan test --parallel --processes=4`
+- objašnjenje: umjesto da pokreće testove jedan po jedan, Laravel će ih pokrenuti istovremeno u 4 odvojena procesa (kao da imate 4 radnika koji istovremeno rade testove)
+  - ovo može značajno ubrzati izvršavanje velikog broja testova
+  - Laravel se automatski brine o kreiranju odvojenih testnih baza za svaki proces
+
+## Coverage i profiliranje
+- coverage - `php artisan test --coverage`
+- objašnjenje - generira izvještaj koji vam pokazuje koliko je posto (npr. 85%) vašeg koda "pokriveno" testovima
+  - to vam pomaže da identificirate dijelove aplikacije koje niste testirali
+- profiliranje - `php artisan test --profile`
+- objašnjenje - nakon izvršavanja, ispisat će listu vaših 10 najsporijih testova
+  - ovo je izuzetno korisno za optimizaciju i pronalaženje problematičnih dijelova koda
+
+## Kreiranje i pokretanje testa
+```php
+php artisan make:test HomepageTest
+```
+
+Primjer testa:
+```php
+// tests/Feature/HomepageTest.php
+namespace Tests\Feature;
+use Tests\TestCase;
+
+class HomepageTest extends TestCase
+{
+    /** @test */
+    public function the_homepage_is_accessible(): void
+    {
+        // 1. simuliraj GET zahtjev na početnu stranicu
+        $response = $this->get('/');
+
+        // 2. provjeri (assert) je li HTTP status odgovora 200 (OK)
+        $response->assertStatus(200);
+    }
+}
+```
+Pokretanje:
+```php
+php artisan test // pokreće sve testove
+php artisan test --filter=HomepageTest // pokreće samo specifični test
+```
+
+## HTTP Testovi (Feature Tests)
+Osnovne asertacije tj. metode kojima provjeravamo je li odgovor ispravan
+```php
+$response->assertStatus(200);   // je li odgovor bio uspješan?
+$response->assertOk();          // skraćenica za assertStatus(200)
+$response->assertNotFound();    // je li odgovor bio 404 Not Found?
+$response->assertRedirect('/login'); // je li korisnik preusmjeren na /login?
+$response->assertSee('Dobrodošli');  // vidi li se tekst "Dobrodošli" na stranici?
+$response->assertDontSee('Pristup zabranjen'); // je li sigurno da se ovaj tekst NE vidi?
+$response->assertSeeInOrder(['Prvi', 'Drugi']); // vide li se ovi tekstovi, točno ovim redoslijedom?
+```
+JSON testiranje - za testiranje API endpointa
+```php
+$response->assertJson(['created' => true]); // sadrži li JSON odgovor ovaj fragment?
+$response->assertExactJson([...]);          // odgovara li JSON odgovor u potpunosti ovom polju?
+$response->assertJsonPath('user.name', 'Pero'); // je li vrijednost na putanji user.name jednaka 'Pero'?
+$response->assertJsonFragment(['active' => true]); // sadrži li JSON ovaj mali dio, bez obzira na strukturu?
+$response->assertCreated();                 // je li HTTP status 201 Created?
+$response->assertForbidden();               // je li HTTP status 403 Forbidden?
+$response->assertNoContent();               // je li HTTP status 204 No Content?
+```
+Session i autentikacija - simuliranje prijavljenih korisnika
+```php
+// simuliraj da je ovaj korisnik prijavljen za sljedeće zahtjeve
+$this->actingAs($user);
+
+// Provjere
+$this->assertAuthenticated();      // je li bilo koji korisnik prijavljen?
+$this->assertAuthenticatedAs($user); // je li točno ovaj korisnik prijavljen?
+$this->assertGuest();              // je li sigurno da nitko nije prijavljen?
+```
+Headers i kolačići - slanje dodatnih informacija uz zahtjev
+```php
+// pošalji GET zahtjev s dodatnim zaglavljem
+$this->withHeaders(['X-Custom-Header' => 'Vrijednost'])->get('/');
+
+// pošalji GET zahtjev s kolačićem
+$this->withCookie('ime_kolacica', 'vrijednost')->get('/');
+```
+View testiranje - testiranje pogleda (views) direktno, bez rute
+```php
+$this->view('welcome', ['name' => 'Pero']) // renderiraj 'welcome.blade.php' s podacima
+     ->assertViewIs('welcome')               // je li ispravan pogled renderiran?
+     ->assertViewHas('name', 'Pero')         // sadrži li pogled varijablu 'name' s vrijednošću 'Pero'?
+     ->assertViewMissing('age');             // je li sigurno da pogled NE sadrži varijablu 'age'?
+```
+Uploadi i storage - testiranje uploada datoteka
+```php
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+
+// 1. Stvori lažni, virtualni disk 'avatars' u memoriji
+Storage::fake('avatars');
+
+// 2. Stvori lažnu sliku u memoriji
+$file = UploadedFile::fake()->image('avatar.jpg');
+
+// 3. Pošalji POST zahtjev s lažnom datotekom
+$response = $this->post('/avatar', ['avatar' => $file]);
+
+// 4. Provjeri je li datoteka s očekivanim imenom spremljena na lažni disk
+Storage::disk('avatars')->assertExists($file->hashName());
+```
+Debugging i exception handling - alati za pronalaženje grešaka u testovima
+```php
+// Ispiši header i sadržaj odgovora i nastavi s testom
+$response->dump();
+
+// Ispiši header i sadržaj odgovora i zaustavi izvršavanje testa
+$response->dd();
+
+// Ako test pada, nemoj hvatati grešku i prikazivati lijepu poruku.
+// Umjesto toga, prikaži puni, "ružni" stack trace da vidim točno gdje je problem.
+$this->withoutExceptionHandling();
+```
+
+## Laravel Dusk (kratki uvod)
+Dusk automatizira stvarni Chrome preglednik za testiranje frontend interakcija.
+
+Instalacija - `composer require laravel/dusk --dev` i `php artisan dusk:install`
+
+Pokretanje - `php artisan dusk`
+
+DB u Dusk-u - koristiti DatabaseMigrations ili DatabaseTruncation traitove u testovima
+  - RefreshDatabase koji se koristi u PHPUnit ne radi jer Dusk i PHPUnit rade u odvojenim procesima
+
+Selektori - koristite `dusk="ime-elementa"` atribut u HTML-u za stabilne selektore
+
+Primjer Dusk testa
+```php
+// tests/Browser/RegistrationTest.php
+
+namespace Tests\Browser;
+
+use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Laravel\Dusk\Browser;
+use Tests\DuskTestCase;
+use App\Models\User;
+
+class RegistrationTest extends DuskTestCase
+{
+    // koristimo DatabaseMigrations trait da osiguramo čistu bazu za svaki test
+    use DatabaseMigrations;
+
+    /** @test */
+    public function a_user_can_register_successfully()
+    {
+        $this->browse(function (Browser $browser) {
+            $browser->visit('/register')
+                    // koristimo @ simbol za referenciranje dusk atributa
+                    ->type('@registration-name-input', 'Pero Peric')
+                    ->type('@registration-email-input', 'pero@peric.com')
+                    ->type('@registration-password-input', 'password')
+                    ->type('@registration-password-confirmation-input', 'password')
+                    ->press('@register-button')
+                    ->assertPathIs('/dashboard')
+                    ->assertSee('Pero Peric');
+        });
+    }
+}
+```
