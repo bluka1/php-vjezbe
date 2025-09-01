@@ -15,17 +15,21 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'a@a.com',
-            'password' => bcrypt('password'), // Ensure to hash the password
-        ]
-      );
-        User::factory()->create([
-            'name' => 'Pero',
-            'email' => 'b@b.com',
-            'password' => bcrypt('1234')
-          ]
-      );
+      //   User::factory()->create([
+      //       'name' => 'Test User',
+      //       'email' => 'a@a.com',
+      //       'password' => bcrypt('password'), // Ensure to hash the password
+      //   ]
+      // );
+      //   User::factory()->create([
+      //       'name' => 'Pero',
+      //       'email' => 'b@b.com',
+      //       'password' => bcrypt('1234')
+      //     ]
+      // );
+
+      $this->call([
+        PostSeeder::class
+      ]);
     }
 }

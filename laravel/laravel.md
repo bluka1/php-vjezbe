@@ -2215,11 +2215,11 @@ Sve se radi putem artisan naredbi.
 
 Laravel nam nudi korisne prečace:
 
-`--create=users` → generira migraciju s kodom za kreiranje nove tablice users
+`--create=products` → generira migraciju s kodom za kreiranje nove tablice products
 
-`--table=users` → generira migraciju s kodom za izmjenu postojeće tablice users
+`--table=posts` → generira migraciju s kodom za izmjenu postojeće tablice posts
 
-`--path=database/migrations/extra` → sprema migraciju u neki drugi folder po vašem izboru
+`--path=database/migrations/extra` → sprema migraciju u neki drugi folder po vašem izboru (u ovom slučaju `database/migrations/extra`)
 
 ## Struktura migracije
 Svaka migracijska datoteka ima dvije ključne metode: `up()` i `down()`.
@@ -2251,7 +2251,7 @@ public function down(): void
 Redoslijed izvršavanja migracija određuje se vremenom (timestampom) u nazivu datoteke.
 
 ## Izmjena postojeće tablice
-Kada koristimo --table opciju, Laravel generira migraciju koja koristi `Schema::table()` umjesto `Schema::create()`. Ovo nam omogućuje dodavanje, izmjenu ili brisanje postojećih stupaca.
+Kada koristimo `--table` opciju, Laravel generira migraciju koja koristi `Schema::table()` umjesto `Schema::create()`. Ovo nam omogućuje dodavanje, izmjenu ili brisanje postojećih stupaca.
 ```php
 // migracija generirana s: php artisan make:migration add_is_active_to_users_table --table=users
 
