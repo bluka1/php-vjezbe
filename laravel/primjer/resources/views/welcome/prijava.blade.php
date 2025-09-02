@@ -39,4 +39,16 @@
       <button type="submit">Odjavi se</button>
     </form>
   @endif
+
+  <br><br>
+
+  <hr>
+
+  <br><br>
+
+  @forelse ($posts as $post)
+      <p>{{$post->title}} - {{$post->content}}</p>
+  @empty
+      <p>Korisnik nema postova.</p>
+  @endforelse
 @endsection

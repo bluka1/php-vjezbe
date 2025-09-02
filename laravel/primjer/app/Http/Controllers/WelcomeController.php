@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Post;
+use App\Models\User as ModelsUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
+use User;
 
 class WelcomeController extends Controller
 {
@@ -77,7 +80,11 @@ class WelcomeController extends Controller
   }
 
   public function prijava () {
-    return view('welcome.prijava');
+    $posts = [];
+    if (Auth::check()) {
+      $posts = Post::where('user_id', Auth::user()->id)->get();
+    }
+    return view('welcome.prijava', compact('posts'));
   }
 
   public function obrada (Request $request) {
