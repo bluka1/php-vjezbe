@@ -124,6 +124,9 @@ Route::post('/slike/store', [SlikeController::class, 'store']);
 Route::get('/posts/create', [PostController::class, 'create']);
 Route::post('/posts/store', [PostController::class, 'store']);
 
+Route::get('/posts/index', [PostController::class, 'index']);
+Route::get('/posts/new', [PostController::class, 'new']);
+Route::post('/posts/add', [PostController::class, 'add']);
 
 Route::get('/poz', function() {
   return 'Hello world';
