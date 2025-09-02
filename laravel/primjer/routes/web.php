@@ -127,6 +127,7 @@ Route::post('/posts/store', [PostController::class, 'store']);
 Route::get('/posts/index', [PostController::class, 'index']);
 Route::get('/posts/new', [PostController::class, 'new']);
 Route::post('/posts/add', [PostController::class, 'add']);
+Route::delete('/posts/{id}', [PostController::class, 'destroy'])->name(name: 'posts.destroy'); 
 
 Route::get('/poz', function() {
   return 'Hello world';

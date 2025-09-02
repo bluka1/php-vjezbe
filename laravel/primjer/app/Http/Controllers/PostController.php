@@ -30,6 +30,17 @@ class PostController extends Controller
     return redirect('/posts/index');
   }
 
+  // 1. dodati gumb za brisanje clanka
+  // 2. dodati metodu u PostController
+  // 3. povezati metodu s adekvatnom rutom
+  // 4. omogućiti brisanje članka iz baze
+
+  public function destroy($id)
+  {
+    Post::destroy($id);
+    return redirect('/posts/index');
+  } 
+
   public function create()
   {
     return view('posts/create');

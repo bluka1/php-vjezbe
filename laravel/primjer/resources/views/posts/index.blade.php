@@ -10,7 +10,11 @@
   <h1>Posts</h1>
 
   @forelse ($posts as $post)
-      <p>{{$post->title}} - {{$post->content}}</p>
+      <p>{{$post->title}} - {{$post->content}} <form action="{{ route('posts.destroy', $post->id) }}" method="POST" style="display:inline;">
+          @csrf
+          @method('DELETE')
+          <button type="submit">Delete . $post->id</button>
+      </form> </p>
   @empty
       <p>Nema postova u bazi.</p>
   @endforelse
