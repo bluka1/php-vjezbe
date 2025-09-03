@@ -2400,6 +2400,7 @@ public function run(): void
 ### Kreiranje modela
 ```bash
 php artisan make:model Post
+php artisan make:model Post -m // dodaje i migraciju
 ```
 - u Laravelu se modeli po defaultu generiraju u `app/Models/`
 - **Zaštita mass assignment‑a** - modeli su zaštićeni prema defaultu
@@ -2448,6 +2449,13 @@ class User extends Model
 
 `$fillable` je sigurniji pristup ("safe by default"). Ako sutra u bazu dodate novi osjetljivi stupac (npr. stanje_racuna) i zaboravite ga dodati na `$guarded` listu, stvorili ste sigurnosni propust. S `$fillable` pristupom, novi stupac automatski nije dozvoljen dok ga vi svjesno ne dodate na listu.
 
+Preporuka je koristiti samo `$fillable` polje jer sva polja koja nisu dodana u `$fillable` polje, automatski su zaštićena od mass assignmenta i time sprječavamo bilo kakav sigurnosni propust.
+Dakle, sva polja koja nisu u `$fillable`, dodana su u `$guarded`.
+
+Primjer: (koristimo samo `$fillable`) - ako sutra dodamo polje `is_admin` u našu tablicu `users` i zaboravimo izmjeniti kod u `User.php`, neće se desiti apsolutno ništa.
+
+Primjer 2: (koristimo samo `$guarded`) - ako sutra dodamo polje `is_admin` u našu tablicu `users` i zaboravimo izmjeniti kod u `User.php`, otvaramo sigurnosni propust i mogla bi se desiti greška koja bi nas mogla koštati tužbe, krade podataka, ucjene...
+
 ### Napredne konfiguracije modela
 ```php
 protected $table = 'my_posts';
@@ -2462,7 +2470,7 @@ use HasUuids;
 use HasUlids;
 ```
 `protected $table = 'my_posts';`
-- Laravelova pretpostavka - ako se vaš model zove Post, Laravel pretpostavlja da se tablica u bazi zove posts (množina, mala slova, tzv. "snake_case")
+- Laravelova pretpostavka - ako se vaš model zove `Post`, Laravel pretpostavlja da se tablica u bazi zove `posts` (množina, mala slova, tzv. "snake_case")
 - zašto biste ovo mijenjali? Zato što vaša postojeća tablica u bazi možda ima drugačije ime, npr. naslijedili ste stari projekt i tablica se zove my_posts ili tbl_postovi. Ovom linijom vi eksplicitno kažete Eloquentu: "Zanemari svoje pravilo, tablica za ovaj model se zove 'my_posts'."
 
 `protected $primaryKey = 'post_id';`
@@ -2478,7 +2486,7 @@ use HasUlids;
 
 `public $timestamps = false;`
 - Laravelova pretpostavka - vaša tablica ima dva posebna stupca: `created_at` i `updated_at` - Laravel će automatski popunjavati i ažurirati te stupce svaki put kad kreirate ili izmijenite redak
-- zašto biste ovo mijenjali? Možda imate tablicu u koju samo upisujete podatke koji se nikad ne mijenjaju (npr. popis država) i vremenske oznake vam jednostavno ne trebaju. Ovom linijom kažete Eloquentu: "Nemoj se brinuti oko created_at i updated_at stupaca za ovaj model, oni ne postoje."
+- zašto biste ovo mijenjali? Možda imate tablicu u koju samo upisujete podatke koji se nikad ne mijenjaju (npr. popis država) i vremenske oznake vam jednostavno ne trebaju. Ovom linijom kažete Eloquentu: "Nemoj se brinuti oko `created_at` i `updated_at` stupaca za ovaj model, oni ne postoje."
 
 `const CREATED_AT = '...';` i `const UPDATED_AT = '...';`
 - Laravelova pretpostavka - stupci za vremenske oznake se zovu točno `created_at` i `updated_at`
@@ -2498,13 +2506,13 @@ Zaključak: sva ova svojstva služe da biste preformulirali Laravelove zadane pr
 
 ### CRUD operacije
 ```php
-Post::create([...]); // zahtijeva fillable/guarded
-$post = Post::find(1);
+Post::create([...]); // kreiranje novog zapisa u bazi - zahtijeva fillable/guarded
+$post = Post::find(1); // dohvaćanje podataka - id proslijeden u find metodu - u ovom slučaju broj 1
 $post = Post::findOrFail(1);
-$post->title = 'Novi';
-$post->save();
-$post->delete();
-Post::updateOrCreate(['id'=>1], ['title'=>'...', 'author' => '...']);
+$post->title = 'Novi'; // ažuriranje dohvaćenih podataka
+$post->save(); // spremanje ažuriranih podataka
+$post->delete(); // brisanje dohvaćenog zapisa
+Post::updateOrCreate(['id'=>1], ['title'=>'...', 'author' => '...']); // ažuriranje postojećeg ili spremanje novog zapisa u bazu
 ```
 - `updateOrCreate()` - prima dva niza - kriterij i vrijednosti
 - `findOrFail()` - baca 404 ako model nije pronađen
@@ -2518,8 +2526,9 @@ $post->content = 'Ovo je sadržaj...';
 $post->save(); // Sprema u bazu
 ```
 - drugi način - `create()` (mass assignment)
+    - zahtijeva da u Post modelu imamo definirano `$fillable` ili `$guarded` polje
 ```php
-// Zahtijeva da su 'title' i 'content' u $fillable polju
+// zahtijeva da su 'title' i 'content' u $fillable polju
 $post = Post::create([
     'title' => 'Moj drugi članak',
     'content' => 'Novi sadržaj...'
@@ -2730,8 +2739,7 @@ Relacije u Eloquentu su način na koji "učimo" naše modele kako su međusobno 
 ### Tipovi relacija 
 
 **One-to-One (hasOne/belongsTo)**  
-- svaki korisnik ima točno jedan profil
-- (User -> hasOne -> Profile)
+- svaki korisnik ima točno jedan profil (User -> hasOne -> Profile)
 - svaki profil pripada točno jednom korisniku (Profile -> belongsTo -> User)
 
 **One-to-Many (hasMany/belongsTo)**
@@ -2749,7 +2757,7 @@ Relacije u Eloquentu su način na koji "učimo" naše modele kako su međusobno 
 - primjer - država ima mnogo postova kroz svoje korisnike (Country -> hasManyThrough -> Post -> through -> User)
 
 **Polymorphic (morphOne, morphMany, morphToMany)**
-- napredna relacija koja omogućuje da jedan model pripada više od jednom drugom modelu, koristeći jednu vezu -> primjer: i članci (Post) i slike (Image) mogu imati komentare
+- napredna relacija koja omogućuje da jedan model pripada više od jednom modelu, koristeći jednu vezu -> primjer: i članci (Post) i slike (Image) mogu imati komentare
     - umjesto da kreirate dvije tablice za komentare, imate jednu koja se može vezati za oba modela
 
 Primjer one-to-one relacije
@@ -2763,12 +2771,22 @@ public function profile() {
 public function user() {
     return $this->belongsTo(User::class);
 }
+
+// dodavanje nove migracije
+// ...
+// u up() metodu dodati ovu liniju:
+$table->foreignId('user_id')->constrained()->onDelete('cascade');
 ```
 
 - `hasOne(Profile::class)` - ovime govorite: "Jedan User ima jedan Profile"
-- Laravel će automatski pretpostaviti da u profiles tablici postoji stupac user_id koji služi kao strani ključ
+- Laravel će automatski pretpostaviti da u profiles tablici postoji stupac `user_id` koji služi kao strani ključ
 
 - `belongsTo(User::class)` - ovo je inverzna strana relacije i njome govorite: "Ovaj Profile pripada jednom User-u"
+
+- `$table->foreignId('user_id')` - dodaje stupac `user_id` tipa BIGINT (unsigned) u tablicu - namijenjen za pohranu ID-a korisnika (strani ključ)
+- `->constrained()` - automatski postavlja strani ključ prema tablici users i stupcu id
+    - Laravel pretpostavlja da je povezani model users (prema nazivu stupca)
+- `->onDelete('cascade')` - ako se korisnik (user) obriše iz tablice users, automatski će se obrisati svi povezani zapisi (npr. postovi) iz ove tablice tj. održava referencijalni integritet u bazi
 
 - korištenje: sada možete pisati kod poput `$user->profile->phone_number` ili `$profile->user->email`
 
@@ -2777,16 +2795,6 @@ public function user() {
 - `withDefault()` rješava taj problem tako da vraća prazan "dummy" model umjesto null
 - `return $this->hasOne(Profile::class)->withDefault();`
     - sada, ako korisnik nema profil, `$user->profile` će biti prazan Profile objekt i nećete dobiti grešku, već prazan string
-
-### Definiranje relacija
-```php
-// User.php
-public function profile() { return $this->hasOne(Profile::class); }
-
-// Profile.php
-public function user() { return $this->belongsTo(User::class); }
-```
-- može se koristiti i `withDefault()` za null-safe relacije
 
 ### Prilagođeni ključevi
 Laravel se oslanja na konvencije (npr. da se strani ključ zove user_id). Ako vaša baza ne prati te konvencije, možete ih eksplicitno navesti.
