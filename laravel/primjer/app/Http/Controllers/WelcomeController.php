@@ -82,7 +82,8 @@ class WelcomeController extends Controller
   public function prijava () {
     $posts = [];
     if (Auth::check()) {
-      $posts = Post::where('user_id', Auth::user()->id)->get();
+      // $posts = Post::where('user_id', Auth::user()->id)->get();
+      $posts = Auth::user()->posts;
     }
     return view('welcome.prijava', compact('posts'));
   }
