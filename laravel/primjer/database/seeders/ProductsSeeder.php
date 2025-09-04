@@ -15,20 +15,17 @@ class ProductsSeeder extends Seeder
     {
       DB::table('products')->insert([
         'name' => 'car',
-        'color' => 'red',
-        'user_id' => 1
+        'color' => 'red'
       ]);
 
       DB::table('products')->insert([
         'name' => 'computer',
-        'color' => 'gray',
-        'user_id' => 1
+        'color' => 'gray'
       ]);
 
       DB::table('products')->insert([
         'name' => 'ball',
-        'color' => 'white',
-        'user_id' => 1
+        'color' => 'white'
       ]);
     }
 }
