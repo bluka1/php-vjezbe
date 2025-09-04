@@ -88,15 +88,24 @@ class WelcomeController extends Controller
     // 5. popunite tablicu vezanu uz novi model nekim podacima (dodajte 2-3 zapisa)
     // 6. prikažite sve Productse koji pripadaju trenutno prijavljenom Useru
 
+    // PRIMJER - many to many
+    // 1. moramo stvoriti novi model koji će biti povezan s Userom
+    // 2. moramo povezati ta 2 modela
+    // 3. moramo stvoriti migraciju koja će stvoriti novu tablicu u kojoj se nalaze many-to-many zapisi
+    // 3.1. moramo seedati podatke u tablicu novog modela
+    // 4. moramo dohvatiti te podatke
+    // 5. moramo prikazati te podatke u view-u
     $posts = [];
     $products = [];
+    $cars = [];
     if (Auth::check()) {
       // $posts = Post::where('user_id', Auth::user()->id)->get(); // dohvaćanje postova filtriranjem
       // $posts = Auth::user()->posts; // dohvaćanje postova na temelju relacije
       $posts = Post::with('user')->get(); // dohvaćanje postova eager loadingom
       $products = Auth::user()->products;
+      $cars = Auth::user()->cars;
     }
-    return view('welcome.prijava', compact('products'));
+    return view('welcome.prijava', compact(['products', 'cars']));
   }
 
   public function obrada (Request $request) {

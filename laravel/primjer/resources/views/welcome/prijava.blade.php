@@ -61,4 +61,13 @@
   @empty
       <p>Korisnik nema proizvoda.</p>
   @endforelse
+
+
+  <hr>
+  <br><br>
+  @forelse ($cars as $car)
+      <p>{{$car->brand}} - {{$car->color}}</p>
+  @empty
+      <p>Korisnik nema automobila.</p>
+  @endforelse
 @endsection
