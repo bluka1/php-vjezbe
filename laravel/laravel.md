@@ -2838,7 +2838,7 @@ Ponekad nam ne trebaju svi povezani modeli, već samo njihov broj
   - to je puno brže nego da za svakog korisnika dohvaćamo sve postove pa onda brojimo
 
 # Query Builder i DB klasa
-**Query Builder** - omogućuje gradnju SQL upita pomoću fluent PHP metoda
+**Query Builder** - omogućuje gradnju SQL upita pomoću fluent PHP metoda (`->where()`, `->limit()`, `->get()` itd.)
   - direktniji od Eloquenta, ali sigurniji od sirovog SQL-a
     - **analogija** -> Eloquent je pametni asistent, Query Builder je set preciznih alata
   - koristi se za kompleksne upite, agregacije, ili kada nisu potrebni Eloquent modeli

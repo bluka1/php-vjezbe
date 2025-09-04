@@ -13,10 +13,22 @@ class ProductsSeeder extends Seeder
      */
     public function run(): void
     {
-      DB::table('users')->insert([
-        'name' => 'Miro Mirić',
-        'email' => 'mr@mr.com',
-        'password' => bcrypt('1234')
+      DB::table('products')->insert([
+        'name' => 'car',
+        'color' => 'red',
+        'user_id' => 1
+      ]);
+
+      DB::table('products')->insert([
+        'name' => 'computer',
+        'color' => 'gray',
+        'user_id' => 1
+      ]);
+
+      DB::table('products')->insert([
+        'name' => 'ball',
+        'color' => 'white',
+        'user_id' => 1
       ]);
     }
 }

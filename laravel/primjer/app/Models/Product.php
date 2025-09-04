@@ -4,12 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Post extends Model
+class Product extends Model
 {
-  protected $fillable = ['title', 'content', 'user_id'];
+  protected $fillable = ['name', 'color'];
 
-  public function user()
-  {
+  public function user() {
     return $this->belongsTo(User::class);
   }
 }

@@ -46,9 +46,19 @@
 
   <br><br>
 
-  @forelse ($posts as $post)
+  {{-- @forelse ($posts as $post)
       <p>{{$post->title}} - {{$post->content}}</p>
   @empty
       <p>Korisnik nema postova.</p>
+  @endforelse --}}
+
+  <hr>
+
+  <br><br>
+
+  @forelse ($products as $product)
+    <p>{{$product->name}} - {{$product->color}}</p>
+  @empty
+      <p>Korisnik nema proizvoda.</p>
   @endforelse
 @endsection

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Models\Product;
 use App\Models\User as ModelsUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -80,12 +81,22 @@ class WelcomeController extends Controller
   }
 
   public function prijava () {
+    // 1. kreirajte novi model Product u našoj aplikaciji
+    // 2. napravite migraciju za taj novi model i pokrenite ju da se primjeni da bazi
+    // 3. povežite User i Products model (napravite relaciju medu njima)
+    // 4. napravite novu migraciju koja povezuje ta 2 modela
+    // 5. popunite tablicu vezanu uz novi model nekim podacima (dodajte 2-3 zapisa)
+    // 6. prikažite sve Productse koji pripadaju trenutno prijavljenom Useru
+
     $posts = [];
+    $products = [];
     if (Auth::check()) {
-      // $posts = Post::where('user_id', Auth::user()->id)->get();
-      $posts = Auth::user()->posts;
+      // $posts = Post::where('user_id', Auth::user()->id)->get(); // dohvaćanje postova filtriranjem
+      // $posts = Auth::user()->posts; // dohvaćanje postova na temelju relacije
+      $posts = Post::with('user')->get(); // dohvaćanje postova eager loadingom
+      $products = Auth::user()->products;
     }
-    return view('welcome.prijava', compact('posts'));
+    return view('welcome.prijava', compact('products'));
   }
 
   public function obrada (Request $request) {
