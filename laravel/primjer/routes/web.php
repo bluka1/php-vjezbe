@@ -79,6 +79,7 @@ Route::resource('korisnici', KorisniciController::class);
 // HTTP zahtjevi
 // GET zahtjevi
 Route::get('/users', [UserController::class, 'index']);
+Route::post('/users', [UserController::class, 'index']);
 
 // zadatak
 // napraviti CustomerController, dodati index rutu i prikazati 3 parametra po izboru
