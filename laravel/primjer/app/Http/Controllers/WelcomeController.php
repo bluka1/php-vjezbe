@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\User as ModelsUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
 use User;
 
@@ -61,7 +62,16 @@ class WelcomeController extends Controller
   }
 
   public function pocetna () {
-    return view('welcome.pocetna');
+    $auti = DB::table('cars')->where('id', 1)->get(); // vraca kolekciju
+    // $auti = DB::table('cars')->find(1); // vraca pojedinacni rezultat
+
+    // 1. dohvatite sve postove
+    // 2. joinajte tablicu users po user idu
+    // 3. prikazite naslov posta i ime autora
+
+    $posts = DB::table('posts')->join('users', 'posts.user_id', '=', 'users.id')->select('posts.title as naslov', 'users.name as author')->get();
+
+    return view('welcome.pocetna', compact('auti', 'posts'));
   }
 
   public function onama () {

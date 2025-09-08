@@ -2896,7 +2896,7 @@ $products = DB::table('products')
   ->get();
 ```
 Što se dešava - korak po korak:
-1. `DB::table('products') -> SELECT * FROM products`
+1. `DB::table('products')` = `SELECT * FROM products`
 2. `->where('is_available', true)` = `SELECT * FROM products WHERE is_available = true`
 3. `->where('price', '<', 50)` = `SELECT * FROM products WHERE is_available = true AND price < 50`
 4. `->orderBy('name', 'asc')` = `SELECT * FROM products WHERE is_available = true AND price < 50 ORDER BY name ASC`
@@ -2965,10 +2965,6 @@ DB::table('users')->where('id', 5)->delete();
 // prebroji koliko ima aktivnih korisnika
 $activeUsers = DB::table('users')->where('active', 1)->count();
 ```
-
-### Često korišteni specijalizirani alati (nice to have)
-Ovo su metode koje rješavaju vrlo česte, specifične probleme i čine kod puno čišćim.
-
 - `join()` - vraća samo retke koji imaju par u obje tablice
 - `leftJoin()` - vraća sve retke iz prve (lijeve) tablice, bez obzira imaju li par u drugoj
 ```php
@@ -2978,6 +2974,10 @@ $posts = DB::table('posts')
     ->select('posts.title', 'users.name as author_name')
     ->get();
 ```
+
+### Često korišteni specijalizirani alati (nice to have)
+Ovo su metode koje rješavaju vrlo česte, specifične probleme i čine kod puno čišćim.
+
 - `whereBetween()` - dohvaća retke gdje je vrijednost stupca unutar zadanog raspona
 ```php
 // dohvati sve narudžbe napravljene u lipnju
