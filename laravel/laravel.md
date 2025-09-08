@@ -3117,7 +3117,7 @@ Testovi se nalaze u `tests/Unit` i `tests/Feature` direktorijima.
   - to čini testove drastično bržima
 
 ## Paralelizacija i performanse
-- zahtijeva composer require brianium/paratest --dev
+- zahtijeva `composer require brianium/paratest --dev`
 - pokretanje: `php artisan test --parallel --processes=4`
 - objašnjenje: umjesto da pokreće testove jedan po jedan, Laravel će ih pokrenuti istovremeno u 4 odvojena procesa (kao da imate 4 radnika koji istovremeno rade testove)
   - ovo može značajno ubrzati izvršavanje velikog broja testova
@@ -3167,6 +3167,9 @@ Osnovne asertacije tj. metode kojima provjeravamo je li odgovor ispravan
 $response->assertStatus(200);   // je li odgovor bio uspješan?
 $response->assertOk();          // skraćenica za assertStatus(200)
 $response->assertNotFound();    // je li odgovor bio 404 Not Found?
+$response->assertCreated();                 // je li HTTP status 201 Created?
+$response->assertForbidden();               // je li HTTP status 403 Forbidden?
+$response->assertNoContent();               // je li HTTP status 204 No Content?
 $response->assertRedirect('/login'); // je li korisnik preusmjeren na /login?
 $response->assertSee('Dobrodošli');  // vidi li se tekst "Dobrodošli" na stranici?
 $response->assertDontSee('Pristup zabranjen'); // je li sigurno da se ovaj tekst NE vidi?
@@ -3178,9 +3181,6 @@ $response->assertJson(['created' => true]); // sadrži li JSON odgovor ovaj frag
 $response->assertExactJson([...]);          // odgovara li JSON odgovor u potpunosti ovom polju?
 $response->assertJsonPath('user.name', 'Pero'); // je li vrijednost na putanji user.name jednaka 'Pero'?
 $response->assertJsonFragment(['active' => true]); // sadrži li JSON ovaj mali dio, bez obzira na strukturu?
-$response->assertCreated();                 // je li HTTP status 201 Created?
-$response->assertForbidden();               // je li HTTP status 403 Forbidden?
-$response->assertNoContent();               // je li HTTP status 204 No Content?
 ```
 Session i autentikacija - simuliranje prijavljenih korisnika
 ```php
