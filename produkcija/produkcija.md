@@ -281,6 +281,20 @@ sudo apt install git
 #### 5. Instalacija MySQL-a
 ```bash
 sudo apt install mysql-server
+
+################ 
+# ako kod instalacije mysqla dobivate errore, izvršite ove naredbe:
+# alociramo 2GB za swapfile
+sudo fallocate -l 2G /swapfile
+# postavljamo dozvole na swapfile
+sudo chmod 600 /swapfile
+# postavljamo swapfile kao swap prostor
+sudo mkswap /swapfile
+# omogućujemo swap prostor
+sudo swapon /swapfile
+################
+
+# nastavak procesa instalacije mysqla
 sudo systemctl enable mysql
 sudo mysql_secure_installation
 
