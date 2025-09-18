@@ -60,3 +60,59 @@ add_header X-XSS-Protection "1; mode=block" always;
 add_header X-Content-Type-Options "nosniff" always;
 add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
 ```
+
+## Dodatna konfiguracija Nginx-a
+```bash
+server {
+    server_name vasa-domena.space;
+    root /var/www/vas-projekt/public;
+
+    add_header X-Frame-Options "SAMEORIGIN";
+    add_header X-Content-Type-Options "nosniff";
+
+    index index.php;
+
+    charset utf-8;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    error_page 404 /index.php;
+
+    location ~ ^/index\.php(/|$) {
+        fastcgi_pass unix:/var/run/php/php8.4-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_hide_header X-Powered-By;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+
+    listen 443 ssl http2; # managed by Certbot
+    listen [::]:443 ssl http2 ipv6only=on; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/codetime.space/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/codetime.space/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+}
+server {
+    if ($host = codetime.space) {
+        return 301 https://vasa-domena.space$request_uri;
+    } # managed by Certbot
+
+
+    listen 80;
+    listen [::]:80;
+    server_name vasa-domena.space www.vasa-domena.space;
+    return 404; # managed by Certbot
+}
+```
+
+Provjera konfiguracije i restart servera - `sudo nginx -t && sudo systemctl reload nginx`
