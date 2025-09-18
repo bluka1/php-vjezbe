@@ -599,3 +599,325 @@ DB_PASSWORD=jaka-lozinka-123
 
 - vaša aplikacija je sada spojena na bazu i trebala bi biti potpuno funkcionalna!
 
+
+## Kontinuirana Integracija (Continuous Integration - CI)
+Do sada smo ručno deployali aplikaciju i to je u redu za početak, ali u stvarnom svijetu, taj proces želimo automatizirati. Tu na scenu stupa Kontinuirana Integracija (CI).
+
+### Što je kontinuirana integracija?
+CI je praksa u razvoju softvera gdje programeri redovito (često i više puta dnevno) spajaju (integriraju) svoje promjene koda u centralni repozitorij. Nakon svakog spajanja, automatski se pokreće proces buildanja i testiranja.
+
+#### Zašto je CI važan? Koje probleme rješava?
+Bez CI-a, timovi često rade danima/tjednima na svojim granama (branchevima) i sve to spajaju na kraju. To dovodi do tzv. "pakla integracije" (integration hell), gdje se rješavaju stotine konflikata, a bugove je teško pronaći.
+
+Prednosti CI-a:
+- rano otkrivanje grešaka - ako vaša promjena "pokvari" testove, saznat ćete to unutar nekoliko minuta, a ne tjednima kasnije
+- manje konflikata - čestim spajanjem malih promjena, konflikti su rjeđi i lakši za riješiti
+- automatizirani testovi - CI osigurava da se testovi uvijek pokreću, što povećava kvalitetu koda
+- uvijek spremna verzija - u svakom trenutku, master grana repozitorija je testirana i spremna za isporuku
+- brža isporuka - automatizacija smanjuje ručni rad i ubrzava cijeli proces od pisanja koda do produkcije
+
+Mane (izazovi):
+- početno ulaganje resursa - potrebno je vrijeme za postavljanje i konfiguraciju CI pipelinea
+- kultura tima - zahtijeva disciplinu tima da pišu testove i redovito commitaju kod
+
+## Alati za Kontinuiranu Integraciju
+CI proces izvršava specijalizirani softver – CI server. Postoje mnogi alati, a dijele se u dvije glavne kategorije:
+- samostalno hostani (Self-hosted) - vi ste odgovorni za instalaciju, održavanje i skaliranje softvera na vlastitim serverima
+- cloud-based (SaaS) - usluge koje rade "u oblaku"; vi samo povežete svoj repozitorij i konfigurirate proces, a oni se brinu za servere i infrastrukturu
+    - Jenkins - tata svih CI alata
+        - open-source, nevjerojatno moćan i fleksibilan s tisućama pluginova
+        - mana mu je što može biti kompleksan za početno postavljanje i održavanje
+    - Travis CI - jedan od prvih popularnih cloud alata, poznat po jednostavnosti i odličnoj integraciji s GitHubom, pogotovo za open-source projekte
+    - GitHub Actions - mdoerno, moćno i izuzetno popularno rješenje integrirano direktno u GitHub
+        - omogućuje da sve automatiziramo, od CI-a do kompletnog deploymenta, direktno iz našeg repozitorija
+        - zbog svoje jednostavnosti i integracije, ovo je danas često najbolji izbor za početak
+
+## Postavljanje CI Pipelinea
+1. Kreiranje Workflow datoteke
+- unutar vašeg Laravel projekta (u rootu), kreirajte novi direktorij i datoteku na sljedećoj putanji:
+
+`.github/workflows/laravel.yml`
+
+Važno je da se folder zove točno .github, a unutar njega postoji workflows.
+
+2. Definiranje osnovne strukture
+- otvorite `laravel.yml` i zalijepite osnovnu strukturu - ovo definira kada će se akcija pokrenuti
+```yml
+name: Laravel CI
+
+# okidač - ova akcija će se pokrenuti na svaki 'push' na 'main' granu i na svaki 'pull request' koji cilja 'main' granu
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# dozvole za GITHUB_TOKEN za deployment (ako će trebati kasnije)
+permissions:
+  contents: read
+
+jobs:
+  # ovdje ćemo definirati zadatke koje treba obaviti na svaki push i na svaki PR
+```
+3. Definiranje "laravel-tests" posla
+- sada moramo definirati što točno naš CI treba raditi
+```yml
+jobs:
+  laravel-tests:
+    # definiramo na kojem operativnom sustavu će se posao izvršavati
+    runs-on: ubuntu-latest
+
+    # koraci (steps) koje treba izvršiti redom
+    steps:
+      # preuzimanje koda - koristi gotovu akciju 'actions/checkout' da preuzme kod iz repozitorija
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # postavljanje PHP okruženja - koristimo gotovu akciju za postavljanje specifične verzije PHP-a
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4' # možete odabrati verziju koja vam treba
+          extensions: mbstring, dom, fileinfo, mysql
+          coverage: none
+
+      # kopiranje .env datoteke - na CI serveru nemamo .env, pa kopiramo .env.example
+      - name: Copy .env file
+        run: php -r "file_exists('.env') || copy('.env.example', '.env');"
+
+      # Instalacija Composer ovisnosti - koristimo --no-progress i --prefer-dist za bržu instalaciju na CI
+      - name: Install Dependencies
+        run: composer install -q --no-progress --prefer-dist --optimize-autoloader
+
+      # generiranje ključa aplikacije
+      - name: Generate key
+        run: php artisan key:generate
+
+      # kreiranje baze podataka za testiranje - kreiramo SQLite bazu u memoriji, što je najbrže za testove
+      - name: Create Database
+        run: |
+          mkdir -p database
+          touch database/database.sqlite
+    
+      # pokretanje migracija - postavljamo .env varijable za testiranje unutar samog koraka
+      - name: Run Migrations
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan migrate
+
+      # pokretanje testova
+      - name: Execute tests (PHPUnit)
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite
+        run: php artisan test
+```
+
+4. Commit i Push
+- spremamo `laravel.yml` datoteku te ju commitamo i pushamo promjene na GitHub repozitorij
+```bash
+git add .github/workflows/laravel.yml
+# ili
+git add .
+git commit -m "Add Laravel CI workflow"
+git push origin main
+```
+5. Praćenje akcije na GitHubu
+- otvorite vaš repozitorij na GitHubu
+- kliknite na tab "Actions"
+- vidjet ćete vaš novi "Laravel CI" workflow kako se pokreće
+- kliknite na njega da vidite detalje izvršavanja svakog koraka
+
+Ako svi koraci prođu i na kraju vidite zelenu kvačicu, čestitamo! Uspješno ste postavili svoj prvi CI pipeline. Ako negdje zapne, GitHub Actions će vam ispisati točnu grešku kako biste je mogli ispraviti.
+
+Ovo je temelj na koji se kasnije nadograđuje Kontinuirana Isporuka (Continuous Deployment - CD), gdje biste nakon uspješnih testova dodali korak koji automatski deploya aplikaciju na server.
+
+## Kontinuirana isporuka (Continuous Delivery - CD)
+Postavili smo kontinuiranu integraciju i to je odlično no što ako bismo, nakon što integracija bude uspješna, mogli automatski i isporučiti taj kod na server?
+
+To je ideja iza kontinuirane isporuke (Continuous Delivery) i kontinuiranog deployanja (Continuous Deployment).
+
+### Koja je razlika? CI vs CD
+- kontinuirana integracija (CI) je faza testiranja; automatizirano provjeravamo je li kod ispravan -> rezultat - imamo verziju koda koja je provjereno ispravna i spremna za isporuku
+
+- kontinuirana isporuka (Continuous Delivery) - faza isporuke; nakon što CI prođe, automatski se pokreće proces koji priprema i isporučuje kod u produkcijsko okruženje, ali zahtijeva ručno odobrenje (jedan klik) za konačno puštanje u rad -> rezultat - aplikacija je na produkcijskom serveru, spremna da postane aktivna kada mi to odlučimo
+
+- kontinuirano deployanje (Continuous Deployment) - najviša razina automatizacije; nakon što CI prođe, kod se potpuno automatski, bez ikakve ljudske intervencije, pušta u rad na produkciji
+
+Za većinu timova, Continuous Delivery je zlatni standard jer pruža savršeni balans između automatizacije i kontrole.
+
+Prednosti CD-a
+- brža isporuka vrijednosti - nove funkcionalnosti i ispravci bugova dolaze do korisnika puno brže
+- manji rizik - deployanje malih, čestih promjena je puno manje rizično od jednog velikog deploya svakih par mjeseci; ako nešto pođe po zlu, točno znate koja mala promjena je uzrokovala problem
+- povećana produktivnost programera - programeri se mogu fokusirati na pisanje koda, a ne na kompleksne i stresne procedure ručnog deployanja
+
+### Alati za Kontinuiranu Isporuku
+Kao i kod CI-a, za CD se koriste isti alati, samo se pipeline proširuje s dodatnim koracima za deployment.
+
+Jenkins, Travis CI, itd.: Svi ovi alati podržavaju CD, često kroz plugine ili skripte.
+
+Buddy.works: Alat koji je posebno fokusiran na jednostavnost kreiranja CD pipelinea s vizualnim sučeljem.
+
+GitHub Actions: Budući da smo ga već koristili za CI, prirodno je da ga proširimo i za CD. Njegova najveća prednost je potpuna integracija s kodom i korištenje istih YAML datoteka za definiranje cijelog procesa.
+
+Da bismo automatizirali deployment, naš CI/CD alat mora imati siguran način da pristupi produkcijskom serveru. To se nikada ne radi spremanjem lozinki u kod. Umjesto toga, koriste se Secrets (tajne).
+
+U GitHub Actions, "Secrets" su enkriptirane varijable koje možete definirati na razini repozitorija i onda ih sigurno koristiti unutar vašeg workflowa. U njih ćemo spremiti SSH ključ i podatke za spajanje na naš server.
+
+### Postavljanje CD Pipelinea
+Nadogradit ćemo naš postojeći CI pipeline. Dodat ćemo novi "posao" (job) koji će se pokrenuti samo ako testovi prođu, i automatski će deployati našu aplikaciju na server.
+
+1. Generiranje i spremanje SSH ključa
+
+Da bi se GitHub mogao spojiti na vaš server, treba mu SSH ključ koji nema lozinku.
+Na vašem lokalnom računalu, kreirajte novi par ključeva samo za ovu svrhu:
+
+`ssh-keygen -t rsa -b 4096 -f github-actions-key -N ""`
+
+- `-t rsa` definira RSA algoritam (najčešći za SSH)
+- `-b 4096` definira broj bitova tj. duljinu ključa - 4096 je prilično sigurno i preporučljivo
+- `-f` definira ime datoteke
+- `-N ""` postavlja praznu lozinku
+
+- ovo će stvoriti dvije datoteke - `github-actions-key` (privatni ključ) i `github-actions-key.pub` (javni ključ)
+
+2. Dodavanje javnog ključa na server
+- sada moramo reći serveru da "vjeruje" ovom novom ključu
+
+- iz foldera u kojem smo generirali ssh ključ kopiramo sadržaj javnog ključa u `~/.ssh/authorized_keys` na serveru
+
+`scp -i /putanja/do/ssh-kljuca-za-prod-server github-actions-key.pub root@IP_ADRESA_SERVERA:~/.ssh/authorized_keys`
+
+3. Spremanje tajni (Secrets) u GitHub
+- na vašem GitHub repozitoriju, idite na `Settings > Secrets and variables > Actions`
+
+- kliknite `New repository secret` i dodajte sljedeće tri tajne:
+
+```bash
+# otvorite datoteku github-actions-key (privatni ključ) na vašem računalu, kopirajte cijeli sadržaj (uključujući -----BEGIN... i -----END...) i zalijepite ga ovdje pod SSH_PRIVATE_KEY
+SSH_PRIVATE_KEY: 
+
+SSH_HOST: IP adresa vašeg servera
+
+SSH_USER: korisničko ime za spajanje na server (vjerojatno root)
+```
+
+4. Proširenje laravel.yml workflowa
+- otvoramo `.github/workflows/laravel.yml` datoteku i dodajemo novi deploy posao nakon laravel-tests posla
+
+- ... (cijeli 'laravel-tests' posao ostaje isti kao prije) ...
+```yml
+  deploy:
+    # ovaj posao ovisi o uspješnom završetku testova
+    needs: laravel-tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to server
+        # koristimo gotovu, popularnu akciju za SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /var/www/mojprojekt
+            git pull origin main
+            composer install --no-dev --optimize-autoloader
+            php artisan migrate --force
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+```
+Objašnjenje:
+
+- `needs: laravel-tests` - govori GitHubu da ovaj posao pokrene samo ako je laravel-tests posao uspješno završio
+- `uses: appleboy/ssh-action@master` - koristimo gotovu akciju koja pojednostavljuje spajanje na server
+- `with` - ovdje prosljeđujemo naše tajne (secrets) akciji
+- `script` - popis naredbi koje će se izvršiti na našem produkcijskom serveru jedna za drugom
+
+5. Testiranje cijelog pipelinea
+- napravimo neku malu, vidljivu promjenu u vašoj aplikaciji (npr. promijenite tekst na početnoj stranici)
+- commitamo i pushamo promjenu na main granu
+```bash
+git add .
+git commit -m "Test CD pipeline"
+git push origin main
+```
+
+Otvorimo Actions tab na GitHubu i vidjet ćemo kako se prvo pokreću testovi. Ako testovi prođu, automatski će se pokrenuti deploy posao. Nakon što i on završi, otvorite vašu web stranicu u pregledniku. Trebali biste vidjeti promjenu koju ste napravili, bez da ste se ijednom ručno spajali na server!
+
+## Završno Testiranje i Isporuka (Teorija)
+Automatizacija je moćna, ali prije nego što isporučimo veliku novu funkcionalnost korisnicima, često postoji i faza završnog, ručnog testiranja. Cilj je provjeriti aplikaciju u cjelini i dobiti povratne informacije od stvarnih ljudi.
+
+### Faze testiranja
+1. Alpha testiranje
+Provodi se unutar tvrtke. Vaši kolege, dizajneri, project manageri testiraju aplikaciju i traže greške ili nelogičnosti u korisničkom iskustvu. Ovo je "internal release".
+
+2. Beta testiranje
+Aplikacija se daje na korištenje ograničenoj, vanjskoj publici. To mogu biti vaši najvjerniji korisnici ili grupa ljudi koja se prijavila za testiranje. Cilj je vidjeti kako se aplikacija ponaša u stvarnim uvjetima, na različitim uređajima i mrežama, te prikupiti vrijedne povratne informacije prije službenog izlaska.
+
+### Životni ciklus izdanja softvera (Software Release Life Cycle)
+Softver prolazi kroz nekoliko faza prije nego što postane stabilan:
+1. Pre-alpha - faza razvoja, prototipovi
+2. Alpha - prva verzija spremna za interno testiranje; očekuju se bugovi
+3. Beta - verzija s uglavnom svim funkcionalnostima, spremna za vanjsko testiranje; još uvijek može imati manje bugove
+4. Release Candidate (RC) - verzija za koju se vjeruje da je spremna za produkciju; ako se u njoj ne pronađu kritični bugovi, postaje finalna verzija
+5. Stable (Stabilna verzija) - službena, produkcijska verzija koja se isporučuje svim korisnicima
+
+Ovaj strukturirani pristup osigurava da do krajnjih korisnika dođe kvalitetan i pouzdan proizvod.
+
+## Završno testiranje – Alpha i Beta
+Naša CI/CD automatizacija je fantastična za hvatanje tehničkih grešaka, ali ne može nam reći je li aplikacija ugodna za korištenje, intuitivna ili kako se ponaša na stotinama različitih uređaja u stvarnom svijetu. Zato, prije velikog izdavanja aplikacije, provodimo dvije važne faze ručnog testiranja: Alpha i Beta.
+
+### Alpha Testiranje
+Ovo je prva faza formalnog testiranja i provodi se isključivo unutar tvrtke. 
+
+Tko testira? Zaposlenici – developeri, QA inženjeri, dizajneri, project manageri.
+
+Gdje se testira? U kontroliranom, laboratorijskom okruženju, najčešće na posebnom "staging" serveru koji je kopija produkcije.
+
+Cilj: pronaći i ispraviti što više bugova (od kritičnih do vizualnih), provjeriti rade li sve funkcionalnosti kako je zamišljeno i prikupiti interni feedback o korisničkom iskustvu.
+
+Analogija: zamislite da restoran priprema novi meni. Alpha testiranje je kada kuhari pripreme sva jela, a onda ih kušaju samo vlasnik, glavni konobari i ostali kuhari. Oni daju kritike, ispravljaju recepte i odlučuju o prezentaciji prije nego što ijedan gost proba hranu.
+
+### Beta Testiranje
+Nakon što je proizvod prošao internu provjeru, spreman je za vanjski svijet, ali u ograničenom obliku.
+
+Tko testira? Stvarni korisnici – odabrana grupa ljudi izvan tvrtke koja je pristala isprobati proizvod prije svih.
+
+Gdje se testira? U stvarnom, produkcijskom okruženju.
+
+Cilj: dobiti povratne informacije od stvarne publike. Kako se aplikacija ponaša na njihovim uređajima, brzinama interneta? Je li im logična za korištenje? Pronalaze li bugove koje interni tim nije primijetio?
+
+Analogija: Restoran je sada siguran u svoj novi meni. Beta testiranje je "ekskluzivna večer za prijatelje restorana". Pozovu odabranu grupu stalnih gostiju da besplatno isprobaju novi meni i daju iskrene komentare. Na temelju njihovih reakcija, restoran radi zadnje finese prije službenog otvaranja.
+
+| Kriterij      | Alpha Testiranje                         | Beta Testiranje                                    |
+|---------------|------------------------------------------|----------------------------------------------------|
+| Tko?          | Interni tim (zaposlenici)                | Eksterni tim (stvarni korisnici)                   |
+| Gdje?         | Staging/Test okruženje                   | Produkcijsko okruženje                             |
+| Fokus         | Funkcionalnost, pronalaženje svih bugova | Upotrebljivost, performanse, feedback od korisnika |
+| Pouzdanost    | Proizvod može biti nestabilan            | Proizvod je uglavnom stabilan                      |
+
+## Životni Ciklus Izdanja Softvera
+Rijetko kada softver ide direktno iz faze "pišem kod" u fazu "dostupno svima". On prolazi kroz jasno definiran životni ciklus, slično kao što proizvod prolazi kroz faze od prototipa do masovne proizvodnje.
+
+Faze životnog ciklusa
+- pre-alpha - najranija faza
+    - uključuje sve aktivnosti prije formalnog testiranja – analiza zahtjeva, dizajn, razvoj, izrada prototipova
+- alpha - prva verzija softvera koja se može testirati
+    - često je puna bugova, nestabilna i nedostaju joj neke planirane funkcionalnosti
+    - ovo je verzija koja se daje Alpha testerima (internom timu)
+- beta - verzija koja je "feature-complete"
+    – sve glavne funkcionalnosti su razvijene
+    - sada je fokus na ispravljanju bugova, optimizaciji performansi i prikupljanju povratnih informacija od vanjskih, Beta testera
+- zatvorena Beta (Closed Beta) - dostupna samo ograničenom broju pozvanih korisnika
+- otvorena Beta (Open Beta) - svatko se može prijaviti i sudjelovati u testiranju
+- Release Candidate (RC) - kandidat za izdanje - verzija za koju se vjeruje da je potpuno stabilna i spremna za produkciju
+    - više se ne dodaju nove funkcionalnosti, samo se ispravljaju kritični bugovi ako se pronađu
+    - ako RC verzija prođe finalne provjere bez problema, ona postaje finalna verzija
+- Stable (stabilna verzija) / General Availability (GA) - službena, finalna, produkcijska verzija koja se isporučuje svim korisnicima
+    - prošla je sve faze testiranja i smatra se pouzdanom
+
+Ovaj strukturirani pristup osigurava da do krajnjih korisnika stigne kvalitetan, testiran i pouzdan proizvod, smanjujući rizik od velikih problema nakon izdavanja aplikacije.
